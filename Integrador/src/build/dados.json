@@ -1,0 +1,15 @@
+{
+  "dadosApp": {
+    "tray": {
+      "code": "",
+      "access_token": "",
+      "refresh_token": "",
+      "date_expiration_access_token": "",
+      "date_expiration_refresh_token": "",
+      "url": ""
+    },
+    "nuvem": {
+      
+    }
+  }
+}
