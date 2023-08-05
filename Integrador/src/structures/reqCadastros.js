@@ -1,11 +1,9 @@
 /* ---------------------- IMPORTAÇÃO DE MÓDULOS ----------------------*/
 const fs = require('fs');
 const path = require('path');
-
-// main.js
 const conexao = require('node-firebird');
 
-const config = {
+const configBanco = {
   "host": 'localhost',
   "port": 3050,
   "database": 'C:/TSD/HOST/HOST.FDB',
@@ -14,7 +12,7 @@ const config = {
 }
 
 function sincronizarBanco() {
-  conexao.attach(config, function (err, db) {
+  conexao.attach(configBanco, function (err, db) {
     if (err)
       throw err;
 
@@ -60,6 +58,19 @@ function sincronizarBanco() {
 
 
 
+function cargaInicial(){
+  conexao.attach(configBanco, function(err, db){
+      if(err)
+        throw err
+
+      db.query("SELECT CoUNT(*) as numeroRegistros FROM PRODUTOS", function*(err, result){
+        if(err)
+        throw err
+
+        let numeroRegistros 
+      })
+  })
+}
 
 
 
