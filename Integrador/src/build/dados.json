@@ -9,7 +9,11 @@
       "url": ""
     },
     "nuvem": {
-      
+      "store_id": "",
+      "app_token": ""
+    },
+    "host": {
+      "caminho_banco": "C:/TSD/HOST"
     }
   }
 }

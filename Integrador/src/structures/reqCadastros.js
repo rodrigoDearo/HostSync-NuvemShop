@@ -2,18 +2,35 @@
 const fs = require('fs');
 const path = require('path');
 
+const { retornaCampo } = require('./manipulacaoJSON');
+
+var caminho, config;
+
 // main.js
 const conexao = require('node-firebird');
 
-const config = {
-  "host": 'localhost',
-  "port": 3050,
-  "database": 'C:/TSD/HOST/HOST.FDB',
-  "user": 'SYSDBA',
-  "password": 'masterkey'
-}
+retornaCampo('caminho_banco').then(response => {
+  caminho = response;
+})
+.then(() => {
+  config = {
+    "host": 'localhost',
+    "port": 3050,
+    "database": `${caminho}/HOST.FDB`,
+    "user": 'SYSDBA',
+    "password": 'masterkey'
+  };
+})
+.then(() => {
+  sincronizacaoInicial();
+})
+.then(() => {
+  sincronizarBanco();
+})
 
-function sincronizarBanco() {
+
+
+function sincronizarBanco(){
   conexao.attach(config, function (err, db) {
     if (err)
       throw err;
@@ -60,15 +77,35 @@ function sincronizarBanco() {
 
 
 
+async function sincronizacaoInicial(){
+  return new Promise(async (resolve, reject) => {
+    try {
+      conexao.attach(config, function(err, db){
+        if (err)
+          throw err;
 
+        db.query('SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, VALOR_COMPRA FROM PRODUTOS', function(err, result){
+            
+            db.detach()
+            if (err)
+              throw err;
 
+           
+            result.forEach((row) => {
+              const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, VALOR_COMPRA } = row;
+          console.log(`ID: ${ID_PRODUTO}, Descrição: ${PRODUTO}, Estoque: ${ESTOQUE}, Preço: ${VALOR_VENDA}, Custo: ${VALOR_COMPRA}`);
+            });
 
+        })
+      })  
 
-
-
-
-
-
+      resolve();
+    }
+    catch(error){
+      reject();
+    }
+  })
+}
 
 
 
