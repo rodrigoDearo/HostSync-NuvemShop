@@ -189,20 +189,6 @@ async function criarTriggerUpdate(){
 }
 
 
-async function configurarEconsultarDependenciasSQL(){
-  return new Promise(async(resolve, reject) => {
-    try {
-  
-  
-
-    } catch (error) {
-      reject(error)
-    }
-  })
-}
-
-
-
 async function sincronizarBanco(){
   conexao.attach(config, function (err, db) {
     if (err)
@@ -257,7 +243,7 @@ async function sincronizacaoInicial(){
         if (err)
           throw err;
 
-        db.query('SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, VALOR_COMPRA FROM PRODUTOS', function(err, result){
+        db.query('SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, CARACTERISTICA, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE FROM PRODUTOS', function(err, result){
             
             db.detach()
             if (err)
@@ -267,7 +253,7 @@ async function sincronizacaoInicial(){
             const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
       
             result.forEach(async (row) => {
-              const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, VALOR_COMPRA } = row;
+              const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, CARACTERISTICA, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE } = row;
               await tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA)
               .then(response => {
                 dados.produtos.ID_PRODUTO = response;
@@ -286,6 +272,7 @@ async function sincronizacaoInicial(){
 }
 
 
+
 async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA){
   return new Promise(async (resolve, reject) => {
     try {
@@ -300,7 +287,7 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                 // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                 console.log('Erro ao cadastrar produto:', PRODUTO);
             } else {
-                // [CADASTRO BEM SUCEDIDO NA PLATAFORMA]
+                // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
                resolve(response.id);
             }
         })
@@ -310,6 +297,86 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
       }
     } catch (error) {
         reject(error)
+    }
+  })
+}
+
+
+
+async function tratativaDeCategorias(){
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      conexao.attach(config, function(err, db){
+        if (err)
+          throw err;
+
+          db.query('SELECT ID, GRUPO FROM PRODUTOS_GRUPO', function(err, result){
+            if (err)
+              throw err;
+            
+            db.detach();
+            const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+
+            result.forEach(async (row) => {
+              const {ID, GRUPO} = row;
+              if(categorias.ID){
+                // [...] CATEGORIA JA EXISTE
+              }
+              else{
+                // [...] CATEGORIA NAO EXISTE
+              }
+            })
+
+            fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+          })
+      })
+
+    } catch (error) {
+      reject(error);
+    }
+  })
+}
+
+
+
+async function tratativaDeSubCategoriaNuvem(){
+  return new Promise(async(resolve, reject) => {
+    try {
+
+      conexao.attach(config, function(err, db){
+        if (err)
+          throw err;
+
+        db.query('SELECT ID, ID_GRUPO, SUBGRUPO FROM PRODUTOS_SUBGRUPO', function(err, result){
+          if (err)
+            throw err;
+
+            db.detach();
+            const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+
+            result.forEach(async (row) => {
+              const {ID, ID_GRUPO, SUBGRUPO} = row;
+
+              if(categorias.ID_GRUPO){
+                if(categorias.ID_GRUPO.ID){
+                  // [...] SUBCATEGORIA JA EXISTE
+                }else{
+                  // [...] SUBCATEGORIA NAO EXISTE
+                }
+              }else{
+                // [...] CATEGORIA SEQUER EXISTE, RETORNAR ERRO GRAVE POP UP
+              }
+
+
+            })
+
+        })
+
+      })
+
+    } catch (error) {
+      reject(error);
     }
   })
 }
@@ -362,23 +429,12 @@ function gravarLogErro(mensagem) {
 
 /*
 
-AFTER INSERT NA TABELA PRODUTOS:
-AS
-begin
-  INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, idproduto) VALUES ('CADASTRO', 'cadastrado', NEW.id_produto);
-end
+CRIAR TRIGGERS PARA GRUPO E SUBRGRUPO, MARCAS E QUALQIER CHAVE ESTRANGEIRA
+DIVIDIR OS ARQUIVOS MELHOR
+DIFERENCIAR CARGA INICIAL DA ANALISE CONTINUA
 
-NOME DA TRIGGER INSERT_HOSTSYNC
-
-
-
-AFTER UPDATE NA TABELA PRODUTOS:
-AS
-begin
-  INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, idproduto) VALUES ('ATUALIZACAO', 'atualizado', NEW.id_produto);
-end
-
-NOME DA TRIGGER UPDATE_HOSTSYNC
-
+LER PRIMEIRO CHAVES ESTRANGEIRAS E DEPOIS PRODUTOS
+VER GRADE NA NUVEM
+VER IMG NA NUVEM
 
 */ 
