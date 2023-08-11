@@ -13,6 +13,9 @@
     "electron": "^24.3.1"
   },
   "dependencies": {
-    "node-firebird": "^1.1.5"
+    "axios": "^1.4.0",
+    "fs": "^0.0.1-security",
+    "node-firebird": "^1.1.5",
+    "path": "^0.12.7"
   }
 }
