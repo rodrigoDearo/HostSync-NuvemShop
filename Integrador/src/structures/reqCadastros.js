@@ -4,187 +4,54 @@ const conexao = require('node-firebird');
 const path = require('path');
 
 const { retornaCampo } = require('./manipulacaoJSON');
-const { cadastrarProdutoNuvem } = require('./configNuvem');
-const { rejects } = require('assert');
+const { tratativaDeProdutosNuvem, tratativaDeCategoriasNuvem, tratativaDeSubCategoriasNuvem } = require('./configNuvem');
+const { criarTriggerUpdateProduto, criarTriggerInsertProduto, criarTabela } = require('./dependenciasSQL');
 
 var caminho, config;
 
-// main.js
 
-retornaCampo('caminho_banco')
-.then(response => {
-  caminho = response;
-})
-.then(() => {
-  config = {
-    "host": 'localhost',
-    "port": 3050,
-    "database": `${caminho}/HOST.FDB`,
-    "user": 'SYSDBA',
-    "password": 'masterkey'
-  };
-})
-.then(async() => {
-    await criarTabela()
-    .then(async () => {
-      await criarTriggerInsert();
-    })
-    .then(async () => {
-      await criarTriggerUpdate();
-    })
-    .catch(() => {
-      console.log('Erro na consulta das trigger e tabela NOTIFICACAO_HOSTSYNC');
-      gravarLogErro('Erro ao criar/verificar as dependências SQL necessárias no banco FDO. Consultar o desenvolvedor do sistema com URGÊNCIA');
-    })
-})
-/*.then(async () => {
-  await sincronizacaoInicial();
-})
-.then(async () => {
-  await sincronizarBanco();
-})*/
-.then(() => {
-  console.log('Fim do THEN');
-})
-.catch(() => {
-  console.log('Terminal do erro');
-})
-
-
-async function criarTabela(){
-  return new Promise(async(resolve, reject) => {
-    try {
-      // CONEXAO ABERTA PARA CRIAR TABELA NOTIFICACOES_HOSTSYNC CASO NAO EXISTA
-      conexao.attach(config, function(err, db) {
-        if (err)
-          throw err
-
-        let codigo = `EXECUTE BLOCK
-        AS
-        BEGIN
-            IF (NOT EXISTS (
-                SELECT 1
-                FROM RDB$RELATIONS
-                WHERE RDB$RELATION_NAME = 'NOTIFICACOES_HOSTSYNC'
-            ))
-            THEN
-            BEGIN
-                EXECUTE STATEMENT 'CREATE TABLE NOTIFICACOES_HOSTSYNC (
-                    TIPO       VARCHAR(100),
-                    OBS        VARCHAR(100),
-                    IDPRODUTO  INTEGER
-                )';
-            END
-        END`
-
-        db.query(codigo, function (err, result){
-          if (err)
-            throw err;
-
-          console.log('TABELA NOTIFICACOES_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
-          gravarLog('TABELA NOTIFICACOES_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
-        })
-
-        db.detach();
-        resolve();
-      })
-    } catch (error) {
-      reject(error);
-    }
+function esqueletoDoSistema(){
+  retornaCampo('caminho_banco')
+  .then(response => {
+    caminho = response;
   })
-}
-
-
-async function criarTriggerInsert(){
-  return new Promise(async(resolve, reject) => {
-    try {
-      
-      // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
-      conexao.attach(config, function (err, db){
-        if (err)
-          throw err;
-
-        let codigoTriggerInsert = `EXECUTE BLOCK
-        AS
-        BEGIN
-            IF (NOT EXISTS (
-                SELECT 1
-                FROM RDB$TRIGGERS
-                WHERE RDB$TRIGGER_NAME = 'INSERT_HOSTSYNC'
-            ))
-            THEN
-            BEGIN
-                EXECUTE STATEMENT 'CREATE TRIGGER INSERT_HOSTSYNC FOR PRODUTOS
-                ACTIVE AFTER INSERT POSITION 0
-                AS
-                BEGIN
-                    INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, idproduto) VALUES (''CADASTRO'', ''cadastrado'', NEW.id_produto);
-                END';
-            END
-        END`;
-
-        db.query(codigoTriggerInsert, function (err, result){
-          if (err)
-            throw err;
-
-          console.log('TRIGGER INSERT_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
-          gravarLog('TRIGGER INSERT_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
-        });
-        
-        db.detach();
-        resolve()
-      });
-
-    } catch (error) {
-      reject(error);
-    }
+  .then(() => {
+    config = {
+      "host": 'localhost',
+      "port": 3050,
+      "database": `${caminho}/HOST.FDB`,
+      "user": 'SYSDBA',
+      "password": 'masterkey'
+    };
   })
-}
-
-
-async function criarTriggerUpdate(){
-  return new Promise(async(resolve, reject) => {
-    try {
-      
-      // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
-      conexao.attach(config, function(err, db){
-        if (err)
-          throw err;
-
-          let codigoTriggerUpdate = `EXECUTE BLOCK
-          AS
-          BEGIN
-              IF (NOT EXISTS (
-                  SELECT 1
-                  FROM RDB$TRIGGERS
-                  WHERE RDB$TRIGGER_NAME = 'UPDATE_HOSTSYNC'
-              ))
-              THEN
-              BEGIN
-                  EXECUTE STATEMENT 'CREATE TRIGGER UPDATE_HOSTSYNC FOR PRODUTOS
-                  ACTIVE AFTER UPDATE POSITION 0
-                  AS
-                  BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, idproduto) VALUES (''ATUALIZACAO'', ''atualizado'', NEW.id_produto);
-                  END';
-              END
-          END`;
-              
-          db.query(codigoTriggerUpdate, function (err, result){
-            if (err)
-              throw err;
-    
-            console.log('TRIGGER UPDATE_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
-            gravarLog('TRIGGER UPDATE_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
-          });
-    
-          db.detach();
-          resolve();
+  .then(async() => {
+    console.log('Cheguei aqui');
+      await criarTabela(config)
+      .then(async () => {
+        await criarTriggerInsertProduto(config)
       })
-
-    } catch (error) {
-      reject(error);
-    }
+      .then(async () => {
+        await criarTriggerUpdateProduto(config);
+      })
+      .catch(() => {
+        console.log('Erro na consulta das trigger e tabela NOTIFICACAO_HOSTSYNC');
+        gravarLogErro('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
+      })
+  })
+  .then(async () => {
+    await sincronizacaoInicialGrupo();
+  })
+  .then(async () => {
+    await sincronizacaoInicialSubGrupo();
+  })
+  .then(async () => {
+    await sincronizacaoInicialProdutos();
+  })
+  /*.then(async () => {
+    await sincronizarBanco();
+  })*/
+  .catch(() => {
+    console.log('Terminal do erro');
   })
 }
 
@@ -193,7 +60,7 @@ async function sincronizarBanco(){
   conexao.attach(config, function (err, db) {
     if (err)
       throw err;
-
+ 
     db.query('SELECT COUNT(*) AS numeroRegistros FROM NOTIFICACOES_HOSTSYNC', function (err, result) {
       if (err)
         throw err;
@@ -236,65 +103,67 @@ async function sincronizarBanco(){
 
 
 
-async function sincronizacaoInicial(){
+
+async function sincronizacaoInicialProdutos() {
   return new Promise(async (resolve, reject) => {
-    try {
-      conexao.attach(config, function(err, db){
-        if (err)
-          throw err;
+      try {
+          conexao.attach(config, function (err, db) {
+              if (err)
+                  throw err;
 
-        db.query('SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, CARACTERISTICA, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE FROM PRODUTOS', function(err, result){
-            
-            db.detach()
-            if (err)
-              throw err;
-            
-            // ABERTURA DO ARQUIVO DE PRODUTOS
-            const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
-      
-            result.forEach(async (row) => {
-              const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, CARACTERISTICA, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE } = row;
-              await tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA)
-              .then(response => {
-                dados.produtos.ID_PRODUTO = response;
-              })
-            });
-            fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-        })
-      })  
+              db.query('SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE FROM PRODUTOS', async function (err, result) {
+                // ver codigo de barras
+              db.detach();
+              if (err)
+                  throw err;
 
-      resolve();
-    }
-    catch(error){
-      reject();
-    }
-  })
+              // ABERTURA DO ARQUIVO DE PRODUTOS
+              for (const row of result) {
+                const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE } = row;
+  
+                  if(ESTOQUE>=0){
+                    await tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, DESCRICAO_COMPLEMENTAR, GRUPO, SUBGRUPO)
+                  }
+                  else{
+                    gravarLog(`O PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADO DEVIDO A ESTOQUE NEGATIVO`);
+                  }
+
+              }
+
+              resolve();
+              });
+          });
+      } catch (error) {
+          reject(error);
+      }
+  });
 }
 
 
 
-async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA){
-  return new Promise(async (resolve, reject) => {
+
+async function sincronizacaoInicialGrupo(){
+  return new Promise(async(resolve, reject) => {
     try {
-      // VERIFICA SE O PRODUTO EXISTE NO BANCO DE PRODUTOS NUVEM
-      if (dados.produtos[ID_PRODUTO]){
-        // [...] AQUI DEVE SER PROSSEGUIDO COM A TRATATIVA DE ALTERAÇÃODE UM PRODUTO OU DELETE
-      }
-      else{
-        await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA)
-        .then(response => {
-            if (response.error) {
-                // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
-                console.log('Erro ao cadastrar produto:', PRODUTO);
-            } else {
-                // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
-               resolve(response.id);
-            }
+
+        conexao.attach(config, function(err, db){
+          if(err)
+            throw err
+
+          db.query('SELECT ID, GRUPO FROM PRODUTOS_GRUPO', async function (err, result){
+              db.detach()
+
+              if(err)
+                throw err
+
+              for(const row of result){
+                const {ID, GRUPO} = row;
+                await tratativaDeCategoriasNuvem(ID, GRUPO);
+              }
+
+              resolve();
+          })
         })
-        .catch((err) => {
-            console.log('Erro ao cadastrar o produto de ID:', ID_PRODUTO);
-        });
-      }
     } catch (error) {
         reject(error)
     }
@@ -303,84 +172,35 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
 
 
 
-async function tratativaDeCategorias(){
-  return new Promise(async (resolve, reject) => {
-    try {
-
-      conexao.attach(config, function(err, db){
-        if (err)
-          throw err;
-
-          db.query('SELECT ID, GRUPO FROM PRODUTOS_GRUPO', function(err, result){
-            if (err)
-              throw err;
-            
-            db.detach();
-            const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
-
-            result.forEach(async (row) => {
-              const {ID, GRUPO} = row;
-              if(categorias.ID){
-                // [...] CATEGORIA JA EXISTE
-              }
-              else{
-                // [...] CATEGORIA NAO EXISTE
-              }
-            })
-
-            fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-          })
-      })
-
-    } catch (error) {
-      reject(error);
-    }
-  })
-}
-
-
-
-async function tratativaDeSubCategoriaNuvem(){
+async function sincronizacaoInicialSubGrupo(){
   return new Promise(async(resolve, reject) => {
     try {
-
       conexao.attach(config, function(err, db){
-        if (err)
+        if(err)
           throw err;
 
-        db.query('SELECT ID, ID_GRUPO, SUBGRUPO FROM PRODUTOS_SUBGRUPO', function(err, result){
-          if (err)
+        db.query('SELECT ID, ID_GRUPO, SUBGRUPO FROM PRODUTOS_SUBGRUPO', async function(err, result){
+          db.detach();
+
+          if(err)
             throw err;
 
-            db.detach();
-            const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+          for(const row of result){
+            const { ID, ID_GRUPO, SUBGRUPO } = row;
+            await tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO);
+          }
 
-            result.forEach(async (row) => {
-              const {ID, ID_GRUPO, SUBGRUPO} = row;
-
-              if(categorias.ID_GRUPO){
-                if(categorias.ID_GRUPO.ID){
-                  // [...] SUBCATEGORIA JA EXISTE
-                }else{
-                  // [...] SUBCATEGORIA NAO EXISTE
-                }
-              }else{
-                // [...] CATEGORIA SEQUER EXISTE, RETORNAR ERRO GRAVE POP UP
-              }
-
-
-            })
-
+          resolve();
         })
 
       })
 
+
     } catch (error) {
-      reject(error);
+      reject(error)
     }
   })
 }
-
 
 
 function gravarLog(mensagem) {
@@ -430,11 +250,21 @@ function gravarLogErro(mensagem) {
 /*
 
 CRIAR TRIGGERS PARA GRUPO E SUBRGRUPO, MARCAS E QUALQIER CHAVE ESTRANGEIRA
-DIVIDIR OS ARQUIVOS MELHOR
-DIFERENCIAR CARGA INICIAL DA ANALISE CONTINUA
 
 LER PRIMEIRO CHAVES ESTRANGEIRAS E DEPOIS PRODUTOS
 VER GRADE NA NUVEM
-VER IMG NA NUVEM
+
+
+TENTAR ARRUMAR IPCRENDERER E MECHER COM POP UP
+VER PRA HOMOLGOAR
+
+1083 produtos
 
 */ 
+
+
+esqueletoDoSistema();
+
+module.exports = { 
+  esqueletoDoSistema,
+}

@@ -9,11 +9,12 @@
       "url": ""
     },
     "nuvem": {
-      "store_id": "3478913",
-      "app_token": "64751205db93298f551eb700678f30baf232b5f7"
+      "store_id": "3578160",
+      "app_token": "6055a843082751d7ffe195314ee50ccdbce37358"
     },
     "host": {
-      "caminho_banco": "C:/TSD/HOST"
+      "caminho_banco": "C:/TSD/HOST",
+      "caminho_imagens":"C:/TSD/Host/imgProdutos"
     }
   }
 }
