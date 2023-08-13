@@ -140,9 +140,291 @@ async function criarTabela(config){
     })
   }
 
+  async function criarTriggerInsertGrupo(config){
+    return new Promise(async(resolve, reject) => {
+      try {
+        
+        // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
+        conexao.attach(config, function (err, db){
+          if (err)
+            throw err;
+  
+          let codigoTriggerInsert = `EXECUTE BLOCK
+          AS
+          BEGIN
+              IF (NOT EXISTS (
+                  SELECT 1
+                  FROM RDB$TRIGGERS
+                  WHERE RDB$TRIGGER_NAME = 'INSERT_GRUPO_HOSTSYNC'
+              ))
+              THEN
+              BEGIN
+                  EXECUTE STATEMENT 'CREATE TRIGGER INSERT_GRUPO_HOSTSYNC FOR PRODUTOS_GRUPO
+                  ACTIVE AFTER INSERT POSITION 0
+                  AS
+                  BEGIN
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRUPO'', ''CADASTRADO'', NEW.ID);
+                  END';
+              END
+          END`;
+  
+          db.query(codigoTriggerInsert, function (err, result){
+            if (err)
+              throw err;
+  
+            console.log('TRIGGER INSERT_GRUPO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+          });
+          
+          db.detach();
+          resolve()
+        });
+  
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
+
+
+  async function criarTriggerUpdateGrupo(config){
+    return new Promise(async(resolve, reject) => {
+      try {
+        
+        // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
+        conexao.attach(config, function(err, db){
+          if (err)
+            throw err;
+  
+            let codigoTriggerUpdate = `EXECUTE BLOCK
+            AS
+            BEGIN
+                IF (NOT EXISTS (
+                    SELECT 1
+                    FROM RDB$TRIGGERS
+                    WHERE RDB$TRIGGER_NAME = 'UPDATE_GRUPO_HOSTSYNC'
+                ))
+                THEN
+                BEGIN
+                    EXECUTE STATEMENT 'CREATE TRIGGER UPDATE_GRUPO_HOSTSYNC FOR PRODUTOS_GRUPO
+                    ACTIVE AFTER UPDATE POSITION 0
+                    AS
+                    BEGIN
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRUPO'', ''ATUALIZADO'', NEW.ID);
+                    END';
+                END
+            END`;
+                
+            db.query(codigoTriggerUpdate, function (err, result){
+              if (err)
+                throw err;
+      
+              console.log('TRIGGER UPDATE_GRUPO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+            });
+      
+            db.detach();
+            resolve();
+        })
+  
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
+
+
+  async function criarTriggerInsertSubGrupo(config){
+    return new Promise(async(resolve, reject) => {
+      try {
+        
+        // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
+        conexao.attach(config, function (err, db){
+          if (err)
+            throw err;
+  
+          let codigoTriggerInsert = `EXECUTE BLOCK
+          AS
+          BEGIN
+              IF (NOT EXISTS (
+                  SELECT 1
+                  FROM RDB$TRIGGERS
+                  WHERE RDB$TRIGGER_NAME = 'INSERT_SUBGRUPO_HOSTSYNC'
+              ))
+              THEN
+              BEGIN
+                  EXECUTE STATEMENT 'CREATE TRIGGER INSERT_SUBGRUPO_HOSTSYNC FOR PRODUTOS_SUBGRUPO
+                  ACTIVE AFTER INSERT POSITION 0
+                  AS
+                  BEGIN
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''SUBGRUPO'', ''CADASTRADO'', NEW.ID);
+                  END';
+              END
+          END`;
+  
+          db.query(codigoTriggerInsert, function (err, result){
+            if (err)
+              throw err;
+  
+            console.log('TRIGGER INSERT_SUBGRUPO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+          });
+          
+          db.detach();
+          resolve()
+        });
+  
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
+
+
+  async function criarTriggerUpdateSubGrupo(config){
+    return new Promise(async(resolve, reject) => {
+      try {
+        
+        // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
+        conexao.attach(config, function(err, db){
+          if (err)
+            throw err;
+  
+            let codigoTriggerUpdate = `EXECUTE BLOCK
+            AS
+            BEGIN
+                IF (NOT EXISTS (
+                    SELECT 1
+                    FROM RDB$TRIGGERS
+                    WHERE RDB$TRIGGER_NAME = 'UPDATE_SUBGRUPO_HOSTSYNC'
+                ))
+                THEN
+                BEGIN
+                    EXECUTE STATEMENT 'CREATE TRIGGER UPDATE_SUBGRUPO_HOSTSYNC FOR PRODUTOS_SUBGRUPO
+                    ACTIVE AFTER UPDATE POSITION 0
+                    AS
+                    BEGIN
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''SUBGRUPO'', ''ATUALIZADO'', NEW.ID);
+                    END';
+                END
+            END`;
+                
+            db.query(codigoTriggerUpdate, function (err, result){
+              if (err)
+                throw err;
+      
+              console.log('TRIGGER UPDATE_SUBGRUPO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+            });
+      
+            db.detach();
+            resolve();
+        })
+  
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
+
+
+  async function criarTriggerInsertGrade(config){
+    return new Promise(async(resolve, reject) => {
+      try {
+        
+        // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
+        conexao.attach(config, function (err, db){
+          if (err)
+            throw err;
+  
+          let codigoTriggerInsert = `EXECUTE BLOCK
+          AS
+          BEGIN
+              IF (NOT EXISTS (
+                  SELECT 1
+                  FROM RDB$TRIGGERS
+                  WHERE RDB$TRIGGER_NAME = 'INSERT_GRADE_HOSTSYNC'
+              ))
+              THEN
+              BEGIN
+                  EXECUTE STATEMENT 'CREATE TRIGGER INSERT_GRADE_HOSTSYNC FOR PRODUTOS_GRADE_ITENS
+                  ACTIVE AFTER INSERT POSITION 0
+                  AS
+                  BEGIN
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRADE'', ''CADASTRADO'', NEW.ID);
+                  END';
+              END
+          END`;
+  
+          db.query(codigoTriggerInsert, function (err, result){
+            if (err)
+              throw err;
+  
+            console.log('TRIGGER INSERT_GRADE_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+          });
+          
+          db.detach();
+          resolve()
+        });
+  
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
+
+
+  async function criarTriggerUpdateGrade(config){
+    return new Promise(async(resolve, reject) => {
+      try {
+        
+        // CONEXAO ABERTA NOVAMENTE PARA ESTAR ATUALIZADA COM A TABELA CRIADA, USADA PARA CRIAR A TRIGGER INSERT
+        conexao.attach(config, function(err, db){
+          if (err)
+            throw err;
+  
+            let codigoTriggerUpdate = `EXECUTE BLOCK
+            AS
+            BEGIN
+                IF (NOT EXISTS (
+                    SELECT 1
+                    FROM RDB$TRIGGERS
+                    WHERE RDB$TRIGGER_NAME = 'UPDATE_GRADE_HOSTSYNC'
+                ))
+                THEN
+                BEGIN
+                    EXECUTE STATEMENT 'CREATE TRIGGER UPDATE_GRADE_HOSTSYNC FOR PRODUTOS_GRADE_ITENS
+                    ACTIVE AFTER UPDATE POSITION 0
+                    AS
+                    BEGIN
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRADE'', ''ATUALIZADO'', NEW.ID);
+                    END';
+                END
+            END`;
+                
+            db.query(codigoTriggerUpdate, function (err, result){
+              if (err)
+                throw err;
+      
+              console.log('TRIGGER UPDATE_GRADE_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+            });
+      
+            db.detach();
+            resolve();
+        })
+  
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
+
+
 
   module.exports = {
     criarTriggerUpdateProduto,
     criarTriggerInsertProduto,
+    criarTriggerInsertGrupo,
+    criarTriggerUpdateGrupo,
+    criarTriggerInsertSubGrupo,
+    criarTriggerUpdateSubGrupo,
+    criarTriggerInsertGrade,
+    criarTriggerUpdateGrade,
     criarTabela
   };

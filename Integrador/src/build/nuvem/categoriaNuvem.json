@@ -1,5 +1,136 @@
 {
   "categorias": {
-
+    "1": {
+      "id": 20238674,
+      "nome": "GERAL",
+      "subcategorias": {}
+    },
+    "2": {
+      "id": 20238675,
+      "nome": "TENIS",
+      "subcategorias": {}
+    },
+    "3": {
+      "id": 20238677,
+      "nome": "BONE",
+      "subcategorias": {}
+    },
+    "4": {
+      "id": 20238678,
+      "nome": "BERMUDAS",
+      "subcategorias": {
+        "3": 20238703
+      }
+    },
+    "5": {
+      "id": 20238680,
+      "nome": "CAMISETAS",
+      "subcategorias": {
+        "4": 20238704,
+        "5": 20238706,
+        "6": 20238707,
+        "7": 20238708
+      }
+    },
+    "6": {
+      "id": 20238679,
+      "nome": "CALCAS",
+      "subcategorias": {}
+    },
+    "7": {
+      "id": 20238681,
+      "nome": "REGATAS",
+      "subcategorias": {}
+    },
+    "8": {
+      "id": 20238684,
+      "nome": "CHINELOS",
+      "subcategorias": {}
+    },
+    "9": {
+      "id": 20238683,
+      "nome": "CAMISAS",
+      "subcategorias": {}
+    },
+    "10": {
+      "id": 20238685,
+      "nome": "CARTEIRAS",
+      "subcategorias": {}
+    },
+    "11": {
+      "id": 20238686,
+      "nome": "CORTA VENTO",
+      "subcategorias": {}
+    },
+    "12": {
+      "id": 20238687,
+      "nome": "MOCHILAS",
+      "subcategorias": {}
+    },
+    "13": {
+      "id": 20238688,
+      "nome": "POCHETES",
+      "subcategorias": {}
+    },
+    "14": {
+      "id": 20238689,
+      "nome": "MEIAS",
+      "subcategorias": {
+        "8": 20238709
+      }
+    },
+    "15": {
+      "id": 20238690,
+      "nome": "CHAVEIROS",
+      "subcategorias": {}
+    },
+    "16": {
+      "id": 20238691,
+      "nome": "MOLETONS",
+      "subcategorias": {}
+    },
+    "17": {
+      "id": 20238692,
+      "nome": "AGASALHOS",
+      "subcategorias": {
+        "1": 20238701,
+        "2": 20238702
+      }
+    },
+    "18": {
+      "id": 20238693,
+      "nome": "SHOULDER BAG",
+      "subcategorias": {}
+    },
+    "19": {
+      "id": 20238694,
+      "nome": "JAQUETAS",
+      "subcategorias": {}
+    },
+    "20": {
+      "id": 20238695,
+      "nome": "GORROS",
+      "subcategorias": {}
+    },
+    "21": {
+      "id": 20238697,
+      "nome": "OCULOS",
+      "subcategorias": {}
+    },
+    "22": {
+      "id": 20238698,
+      "nome": "COLETES",
+      "subcategorias": {}
+    },
+    "23": {
+      "id": 20238699,
+      "nome": "CAL�AS",
+      "subcategorias": {}
+    },
+    "24": {
+      "id": 20238700,
+      "nome": "BONES",
+      "subcategorias": {}
+    }
   }
 }

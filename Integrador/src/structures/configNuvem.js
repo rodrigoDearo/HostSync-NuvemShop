@@ -41,7 +41,7 @@ async function cadastroImagem(img, caminho){
 }
 
 
-async function definirRequisicaoCadastroProduto(nome, estoque, preco, descricao, categoria){
+async function definirRequisicaoCadastroProduto(nome, estoque, preco, descricao, categoria, barras){
     return new Promise(async(resolve, reject) => {
         await retornaCampo('app_token')
         .then(response => {
@@ -72,6 +72,10 @@ async function definirRequisicaoCadastroProduto(nome, estoque, preco, descricao,
         .then(() => {
             if(categoria != null){
               data.categories = [categoria]
+            }
+
+            if(barras.length==13){
+              data.variants[0].barcode = barras
             }
         })
         .then(() => {
@@ -170,10 +174,10 @@ async function cadastrarSubCategoriaNuvem(nome, idGrupo){
 }
 
 
-async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, categoria){
+async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, categoria, codigoBarras){
     return new Promise(async (resolve, reject) => {
         try {
-            await definirRequisicaoCadastroProduto(nome, estoque, preco, descricao, categoria);
+            await definirRequisicaoCadastroProduto(nome, estoque, preco, descricao, categoria, codigoBarras);
 
             axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, data, config)
             .then((response) => {
@@ -201,7 +205,59 @@ async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, cate
 }
 
 
-async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO){
+
+async function cadastrarGradeNuvem(nome, id_produto, estoque){
+  return new Promise(async (resolve, reject) => {
+    try {
+      
+      await retornaCampo('app_token')
+        .then(response => {
+            config = {
+                headers: {
+                  Authentication: `bearer ${response}`,
+                  'User-Agent': `HostSync (7752)`,
+                  'Content-Type': 'application/json'
+                },
+              };
+        })
+        .then(async () => {
+            await retornaCampo('store_id')
+            .then(response => {
+                store_id = response;
+            })
+        })
+        .then(() => {
+            data = {
+              values: [
+                {
+                    pt: nome
+                }
+              ],
+              stock: estoque
+            }
+        })
+        .then(() => {
+          console.log(data);
+          console.log(`https://api.nuvemshop.com.br/v1/${store_id}/products/${id_produto}/variants`)
+          axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${id_produto}/variants`, data, config)
+          .then(response => {
+            console.log(`GRADE ${nome} CRIADA COM SUCESSO`);
+            gravarLog(`GRADE ${nome} CRIADA COM SUCESSO`)
+            resolve(response.data)
+          })
+        })
+        .catch(() => {
+          reject(error);
+        })
+
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO, BARRAS){
     return new Promise(async (resolve, reject) => {
       try {
         const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
@@ -229,7 +285,7 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
         }
         else{
           if(STATUS=='ATIVO'){
-            await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO)
+            await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS)
             .then(response => {
                 if (response.error) {
                     // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
@@ -325,6 +381,37 @@ async function tratativaDeCategoriasNuvem(ID, NOME) {
   }
 
 
+  async function tratativaDeGradeNuvem(NOME_GRADE, ID_PRODUTO, ID_GRADE, ESTOQUE) {
+    try {
+        const gradesJSON = JSON.parse(fs.readFileSync('./src/build/nuvem/gradeNuvem.json', 'utf8'));
+        const produtos = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
+
+        if (gradesJSON.grades[ID_GRADE]) {
+            console.log(`GRADE ${NOME_GRADE} JA ESTA CADASTRADA`);
+        } else {
+            try {
+                let idEnvio = produtos.produtos[ID_PRODUTO];
+  
+                if(idEnvio==undefined){
+                  gravarLog(`${NOME_GRADE} NÃO FOI CADASTRADA NO PRODUTO DE ID ${ID_PRODUTO} DEVIDO AO PRODUTO NÃO ESTAR CADASTRADO`);
+                  console.log(`${NOME_GRADE} NÃO FOI CADASTRADA NO PRODUTO DE ID ${ID_PRODUTO} DEVIDO AO PRODUTO NÃO ESTAR CADASTRADO`);
+                }
+                else{
+                  const response = await cadastrarGradeNuvem(NOME_GRADE, idEnvio, ESTOQUE);
+                  gradesJSON.grades[ID_GRADE] = response.id
+                }
+
+                fs.writeFileSync('./src/build/nuvem/gradeNuvem.json', JSON.stringify(gradesJSON, null, 2));
+                console.log(`GRADE ${NOME_GRADE} CADASTRADA COM SUCESSO`);
+            } catch (error) {
+                console.log(`ERRO AO CRIAR GRADE ${NOME_GRADE}`);
+                gravarLogErro(`ERRO AO CRIAR GRADE ${NOME_GRADE}`);
+            }
+        }
+    } catch (error) {
+        console.log('OPA');
+    }
+  }
 
   // FUNÇÃO PARA GRAVAR MENSAGEM NO ARQUIVO LOG
   function gravarLog(mensagem) {
@@ -375,5 +462,6 @@ async function tratativaDeCategoriasNuvem(ID, NOME) {
 module.exports = {
     tratativaDeProdutosNuvem,
     tratativaDeCategoriasNuvem,
-    tratativaDeSubCategoriasNuvem
+    tratativaDeSubCategoriasNuvem,
+    tratativaDeGradeNuvem
 }
