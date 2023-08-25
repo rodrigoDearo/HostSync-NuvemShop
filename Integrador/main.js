@@ -1,4 +1,5 @@
 // IMPORTANDO MÓDULOS E CONFIGURANDO VARIAVEIS 
+/*
 const { app, BrowserWindow, globalShortcut } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
@@ -14,7 +15,7 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 650,
         height: 400,
-        frame: false,
+        //frame: false,
         resizable: false,
         webPreferences: {
             nodeIntegration: true,
@@ -40,13 +41,12 @@ function createWindow() {
 app.on('ready', () => {
     createWindow();
 
-    setTimeout(() => {
+    setTimeout(async () => {
         if(!zPressionado){
-            mainWindow.loadFile('./src/pages/sincronizacao.html');
             podeAbrirConfig = false;
-            console.log('Iniciar ')
+            console.log('Iniciar ');         
             exec(`node ${caminhoDoScript}`, (error, stdout, stderr) => {
-               
+                mainWindow.loadFile('./src/pages/sincronizacao.html');
             });
         }
     }, 8000);
@@ -66,4 +66,23 @@ app.on('activate', () => {
 
 app.on('will-quit', () => {
     globalShortcut.unregisterAll(); // Remova todos os atalhos globais
+});*/
+
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
+
+app.on('ready', () => {
+  const mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+  });
+
+  mainWindow.loadFile(path.join(__dirname, './src/pages/sincronizacao.html'));
 });
+
+
+

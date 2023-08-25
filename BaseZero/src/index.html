@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BaseZero</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f0f0f0;
+        padding: 20px;
+      }
+
+      h1 {
+        margin-top: 20px;
+      }
+
+      .container {
+        width: 400px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+
+      label {
+        display: block;
+        text-align: left;
+        margin-bottom: 10px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+
+      button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>BaseZero</h1>
+    <div class="container">
+      <form>
+        <label for="produtoId">ID do Produto:</label>
+        <input type="text" id="produtoId" name="produtoId" placeholder="Digite o ID do produto" required>
+        
+        <label for="justificativa">Justificativa:</label>
+        <input type="text" id="justificativa" name="justificativa" placeholder="Digite a justificativa" required>
+        
+        <button type="submit">Zerar Base de Produtos</button>
+      </form>
+    </div>
+  </body>
+</html>

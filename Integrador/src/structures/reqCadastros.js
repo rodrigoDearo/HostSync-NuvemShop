@@ -1,15 +1,22 @@
+process.stdin.setEncoding('utf-8');
+
 /* ---------------------- IMPORTAÇÃO DE MÓDULOS ----------------------*/
 const fs = require('fs');
 const conexao = require('node-firebird');
 const path = require('path');
 
 const { retornaCampo } = require('./manipulacaoJSON');
-const { tratativaDeProdutosNuvem, tratativaDeCategoriasNuvem, tratativaDeSubCategoriasNuvem, tratativaDeGradeNuvem } = require('./configNuvem');
-const { criarTriggerUpdateProduto, criarTriggerInsertProduto, criarTriggerInsertGrupo, criarTriggerUpdateGrupo, criarTriggerInsertSubGrupo, criarTriggerUpdateSubGrupo, criarTriggerInsertGrade, criarTriggerUpdateGrade, criarTabela } = require('./dependenciasSQL');
+const { tratativaDeProdutosNuvem, tratativaDeCategoriasNuvem, tratativaDeSubCategoriasNuvem, tratativaDeVariacaoNuvem, novoRegistroProdutoNuvem } = require('./configNuvem');
+const { criarTabela, criarTriggerUpdateProduto, criarTriggerInsertProduto, criarTriggerInsertGrupo, criarTriggerUpdateGrupo, criarTriggerInsertSubGrupo, criarTriggerUpdateSubGrupo, criarTriggerInsertVariacao, criarTriggerUpdateVariacao, criarTriggerDeleteVariacao, criarTriggerInsertGrade, criarTriggerUpdateGrade, criarTriggerDeleteGrade } = require('./dependenciasSQL');
+const { rejects } = require('assert');
 
-var caminho, config;
+var caminho, config, hora = 0;
 
 
+
+/**
+ * FUNÇÃO RESPONSÁVEL POR ESTRUTURAR O SEQUENCIAMENTO DO PROGRAMA
+ */
 function esqueletoDoSistema(){
   retornaCampo('caminho_banco')
   .then(response => {
@@ -25,7 +32,6 @@ function esqueletoDoSistema(){
     };
   })
   .then(async() => {
-    console.log('Cheguei aqui');
       await criarTabela(config)
       .then(async () => {
         await criarTriggerInsertProduto(config)
@@ -46,15 +52,30 @@ function esqueletoDoSistema(){
         await criarTriggerUpdateSubGrupo(config);
       })
       .then(async () => {
+        await criarTriggerInsertVariacao(config);
+      })
+      .then(async () => {
+        await criarTriggerUpdateVariacao(config);
+      })
+      .then(async () => {
+        await criarTriggerDeleteVariacao(config);
+      })
+      .then(async () => {
         await criarTriggerInsertGrade(config)
       })
       .then(async () => {
         await criarTriggerUpdateGrade(config);
       })
+      .then(async () => {
+        await criarTriggerDeleteGrade(config)
+      })
       .catch(() => {
-        console.log('Erro na consulta das trigger e tabela NOTIFICACAO_HOSTSYNC');
+        console.log('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
         gravarLogErro('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
       })
+  })
+  .then(async () => {
+    await sincronizacaoInicialGrades();
   })
   .then(async () => {
     await sincronizacaoInicialGrupo();
@@ -65,10 +86,11 @@ function esqueletoDoSistema(){
   .then(async () => {
     await sincronizacaoInicialProdutos();
   })
-  /*.then(async () => { EM DESENVOLVIMENTO
-    await sincronizacaoInicialGrade();
-  })*/
+  //.then(async () => { 
+    //await sincronizacaoInicialVariantes();
+  //})
   .then(async () => {
+    hello();
     await sincronizarBanco();
   })
   .catch(() => {
@@ -77,6 +99,10 @@ function esqueletoDoSistema(){
 }
 
 
+
+/**
+ * FUNÇÃO RESPONSAVEL POR FAZER A LEITURA RECORRENTE DA TABELA DE NOTIFICAÇÕES DO SISTEMA E APLICAR O TRATAMENTO NECESSÁRIO
+ */
 async function sincronizarBanco(){
   conexao.attach(config, function (err, db) {
     if (err)
@@ -89,29 +115,101 @@ async function sincronizarBanco(){
       let totalRegistros = result[0].NUMEROREGISTROS;
 
       if (totalRegistros > 0) {
-        db.query('SELECT FIRST 1 OBS AS obsproduto, IDITEM AS id FROM NOTIFICACOES_HOSTSYNC', function (err, resultNotificacao) {
+        db.query('SELECT FIRST 1 TIPO as tabela, OBS AS obsproduto, IDITEM AS id FROM NOTIFICACOES_HOSTSYNC', async function (err, resultNotificacao) {
           if (err)
             console.log(err);
 
+          let tabelaRegistro = resultNotificacao[0].TABELA;
           let obsDoRegistro = resultNotificacao[0].OBSPRODUTO;
-          let idProdutoRegistro = resultNotificacao[0].ID;
+          let idRegistro = resultNotificacao[0].ID;
 
-          console.log("O produto de ID " + idProdutoRegistro + " foi " + obsDoRegistro + " com sucesso!");
 
-          db.query('DELETE FROM NOTIFICACOES_HOSTSYNC WHERE IDITEM = ?', [idProdutoRegistro], function (err, result) {
-            if (err)
-              throw err;
+          switch (tabelaRegistro) {
+            case "PRODUTO":
+              db.query(`SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE, BARRAS FROM PRODUTOS WHERE ID_PRODUTO=${idRegistro}`, async function (err, result) {
+                db.detach();
+                if (err)
+                    throw err;
+    
+                const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE, BARRAS } = result[0];
+                await novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, DESCRICAO_COMPLEMENTAR, GRUPO, SUBGRUPO, BARRAS)
+              }) 
+              break;
+          
 
-            console.log('Deletado o registro já lido');
-            db.detach(function (err) {
-              if (err)
-                throw err;
-              setTimeout(sincronizarBanco, 5000);
-            });
-          });
+            case "VARIACAO":
+              switch (obsDoRegistro) {
+                case "CADASTRADO":
+                  break;
+                
+                case "ATUALIZADO":
+                  break;
+
+                case "DELETADO":
+                  break;
+
+              }
+              break;
+
+
+            case "GRADE":
+              switch (obsDoRegistro) {
+                case "CADASTRADO":
+                  await cadastrarGrade(idRegistro)
+                  break;
+                
+                case "ATUALIZADO":
+                  await cadastrarGrade(idRegistro)
+                  break;
+
+                case "DELETADO":
+                  break;
+
+              }
+              break;
+
+
+            case "GRUPO":
+              switch (obsDoRegistro) {
+                case "CADASTRADO":
+                  break;
+                
+                case "ATUALIZADO":
+                  break;
+
+                case "DELETADO":
+                  break;
+
+              }
+              break;
+
+
+            case "SUBGRUPO":
+              switch (obsDoRegistro) {
+                case "CADASTRADO":
+                  break;
+                
+                case "ATUALIZADO":
+                  break;
+
+                case "DELETADO":
+                  break;
+
+              }
+              break;
+
+            default:
+              console.log('ERRO FATAL CRÍTICO, ENTRE IMEDIATAMENTE EM CONTATO COM DESENVOLVIMENTO, O INTEGRADO POSSIVELMENTE NÃO ESTÁ EM FUNCIONAMENTO DE FORMA ADEQUADA')
+              break;
+          }
+
+      
+          db.query('DELETE FROM NOTIFICACOES_HOSTSYNC WHERE IDITEM = ?', [idProdutoRegistro]);
+          setTimeout(sincronizarBanco, 5000);
         });
       } else {
         console.log('Nenhum registro encontrado para leitura.');
+        gravarLog('Nenhum registro encontrado para leitura.');
         db.detach(function (err) {
           if (err)
             throw err;
@@ -123,6 +221,103 @@ async function sincronizarBanco(){
 }
 
 
+function hello(){
+  console.log(`Ola, estou rodando a ${hora} horas`)
+  gravarLog(`Ola, estou rodando a ${hora} horas`);
+  hora++
+  setTimeout(hello, 3600000)
+}
+
+
+
+
+
+async function deletarGrade(ID){
+  return new Promise(async (resolve, reject) => {
+    const grades = JSON.parse(fs.readFileSync('./src/build/nuvem/grades.json', 'utf8'));
+    try {
+      conexao.attach(config, function(err, db){
+        if(err)
+          throw err
+
+        db.query(`SELECT GRADE FROM GRADE WHERE ID=${ID}`, async function(err, result){
+          db.detach();
+
+          if(err)
+            throw err;
+
+          for(const row of result){
+            const { GRADE } = row;
+            grades[ID] = {
+              "NOME": GRADE,
+              "PRODUTOS": {
+
+              }
+            }
+
+            fs.writeFileSync('./src/build/nuvem/grades.json', JSON.stringify(grades));
+            console.log('ADICIONADO AO ARQUIVO A GRADE: ' + GRADE)
+          }
+        })
+      })
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+async function cadastrarGrade(ID){
+  return new Promise(async (resolve, reject) => {
+    const grades = JSON.parse(fs.readFileSync('./src/build/nuvem/grades.json', 'utf8'));
+    try {
+      conexao.attach(config, function(err, db){
+        if(err)
+          throw err
+
+        db.query(`SELECT GRADE FROM GRADE WHERE ID=${ID}`, async function(err, result){
+          db.detach();
+
+          if(err)
+            throw err;
+
+          for(const row of result){
+            const { GRADE } = row;
+            grades[ID] = {
+              "NOME": GRADE,
+              "PRODUTOS": {
+
+              }
+            }
+
+            fs.writeFileSync('./src/build/nuvem/grades.json', JSON.stringify(grades));
+            console.log('ADICIONADO AO ARQUIVO A GRADE: ' + GRADE)
+          }
+        })
+      })
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+
+
+
+
+
+
+
+//    #####    ####    ##   ##    ####             ####    ##   ##   ####      ####    ####      ##     ####
+//   ##   ##    ##     ###  ##   ##  ##             ##     ###  ##    ##      ##  ##    ##      ####     ##
+//   #          ##     #### ##  ##                  ##     #### ##    ##     ##         ##     ##  ##    ##
+//    #####     ##     ## ####  ##                  ##     ## ####    ##     ##         ##     ##  ##    ##
+//        ##    ##     ##  ###  ##                  ##     ##  ###    ##     ##         ##     ######    ##   #
+//   ##   ##    ##     ##   ##   ##  ##             ##     ##   ##    ##      ##  ##    ##     ##  ##    ##  ##
+//    #####    ####    ##   ##    ####             ####    ##   ##   ####      ####    ####    ##  ##   #######
 
 
 async function sincronizacaoInicialProdutos() {
@@ -144,9 +339,14 @@ async function sincronizacaoInicialProdutos() {
   
                   if(ESTOQUE>=0){
                     await tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, DESCRICAO_COMPLEMENTAR, GRUPO, SUBGRUPO, BARRAS)
+                    .catch(() => {
+                      gravarlog(`O PRODUTO ${PRODUTO} NÃO FOI CADASTRADO DEVIDO A UM ERRO, ENTRE EM CONTATO COM SUPORTE TÉCNICO`) 
+                      // ERRO AO CADASTRAR PRODUTO - retornar POP-UP
+                    })
                   }
                   else{
                     gravarLog(`O PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADO DEVIDO A ESTOQUE NEGATIVO`);
+                    // FALHA AO CADASTRAR PRODUTO - retornar POP UP
                   }
 
               }
@@ -162,7 +362,48 @@ async function sincronizacaoInicialProdutos() {
 
 
 
+/**
+ * FUNÇÃO RESPONSÁVEL POR SALVAR NO ARQUIVO JSON TODA A RELAÇÃO DE ID D OHOST COM O NOME DA GRADE NO HOST 
+ */
+async function sincronizacaoInicialGrades(){
+  return new Promise(async (resolve, reject) => {
+    const grades = JSON.parse(fs.readFileSync('./src/build/nuvem/grades.json', 'utf8'));
+    try {
+      conexao.attach(config, function(err, db){
+        if(err)
+          throw err
 
+        db.query('SELECT ID, GRADE FROM GRADE', async function(err, result){
+          db.detach();
+
+          if(err)
+            throw err;
+
+          for(const row of result){
+            const { ID, GRADE } = row;
+            grades[ID] = {
+              "NOME": GRADE,
+              "PRODUTOS": {
+
+              }
+            }
+
+            fs.writeFileSync('./src/build/nuvem/grades.json', JSON.stringify(grades));
+            console.log('ADICIONADO AO ARQUIVO A GRADE: ' + GRADE)
+          }
+        })
+      })
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+/**
+ * FUNÇÃO RESPONSÁVEL POR FAZER A CARGA INICIAL DE GRUPOS
+ */
 async function sincronizacaoInicialGrupo(){
   return new Promise(async(resolve, reject) => {
     try {
@@ -179,7 +420,7 @@ async function sincronizacaoInicialGrupo(){
 
               for(const row of result){
                 const {ID, GRUPO} = row;
-                await tratativaDeCategoriasNuvem(ID, GRUPO);
+                await tratativaDeCategoriasNuvem(ID, GRUPO)
               }
 
               resolve();
@@ -192,7 +433,9 @@ async function sincronizacaoInicialGrupo(){
 }
 
 
-
+/**
+ * FUNÇÃO RESPONSÁVEL POR FAZER A CARGA INICIAL DE SUBGRUPOS
+ */
 async function sincronizacaoInicialSubGrupo(){
   return new Promise(async(resolve, reject) => {
     try {
@@ -225,42 +468,61 @@ async function sincronizacaoInicialSubGrupo(){
 
 
 
-async function sincronizacaoInicialGrade() {
-  try {
-    const db = await new Promise((resolve, reject) => {
-      conexao.attach(config, (err, db) => {
-        if (err)
-          reject(err);
-        else
-          resolve(db);
-      });
-    });
+async function sincronizacaoInicialVariantes() {
+  return new Promise(async(resolve, reject) => {
+    try {
+      const grades = JSON.parse(fs.readFileSync('./src/build/nuvem/grades.json', 'utf8'));
+      const produtos = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
+      conexao.attach(config, function(err, db){
+        if(err)
+          throw err;
 
-    const result = await new Promise((resolve, reject) => {
-      db.query('SELECT ID_PRODUTO, ID_GRADE, ESTOQUE FROM PRODUTOS_GRADE_ITENS', (err, result) => {
-        if (err)
-          reject(err);
-        else
-          resolve(result);
-      });
-    });
+        db.query('SELECT ID_PRODUTO, ID_GRADE, ESTOQUE FROM PRODUTOS_GRADE_ITENS', async function (err, result){
+          db.detach();
 
-    for (const row of result) {
-      const { ID_PRODUTO, ID_GRADE, ESTOQUE } = row;
-      const nomeGrade = await new Promise((resolve, reject) => {
-        db.query(`SELECT GRADE FROM GRADE WHERE ID=${ID_GRADE}`, (err, nomeGrade) => {
-          if (err)
-            console.log('GRADE DA RELAÇÃO NÃO EXISTE' + err);
-          resolve(nomeGrade[0]['GRADE']);
-        });
-      });
-      await tratativaDeGradeNuvem(nomeGrade, ID_PRODUTO, ID_GRADE, ESTOQUE);
+          if(err)
+            throw err;
+
+          for(const row of result){
+            const { ID_PRODUTO, ID_GRADE, ESTOQUE } = row;
+
+            if((grades[ID_GRADE]) && (produtos.produtos[ID_PRODUTO])){
+              let idNuvem = produtos.produtos[ID_PRODUTO];
+              let nomeGrade = grades[ID_GRADE]['NOME'];
+
+
+              if(grades[ID_GRADE].PRODUTOS[idNuvem]){
+                console.log('PRODUTO JA POSSUI ESTA VARIACAO')
+              }
+              else{
+                if(ESTOQUE<0){
+                  console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
+                gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
+                }
+                else{
+                  await tratativaDeVariacaoNuvem(nomeGrade, idNuvem, ESTOQUE)
+                  .then(response => {
+                    console.log(response)
+                  })
+                }
+              }
+            }
+            else{
+              console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
+              gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
+            }
+
+          }
+        })
+        
+      })
+
+      resolve()
+    } catch (error) {
+      reject(error)
     }
+  })
 
-    db.detach();
-  } catch (error) {
-    console.error(error);
-  }
 }
 
 
@@ -279,8 +541,6 @@ function gravarLog(mensagem) {
   fs.appendFile(logFilePath, logMessage, (err) => {
     if (err) {
       console.error('Erro ao gravar o log:', err);
-    } else {
-      console.log('Log gravado com sucesso!');
     }
   });
 }
@@ -304,8 +564,6 @@ function gravarLogErro(mensagem) {
   fs.appendFile(logFilePath, logMessage, (err) => {
     if (err) {
       console.error('Erro ao gravar o log:', err);
-    } else {
-      console.log('Log gravado com sucesso!');
     }
   });
 }
@@ -326,11 +584,14 @@ DAR AÇÃO PARA O NOTIFICAO_HOSTSYNC
 PLANEJAR MELHOR O ESQUELETO DO SISTEMA PARA DIFERENTES OCASIÕES
 VER VISUAL
 
+
+// ARRUMAR QUANDO COLOCAR VARIANTS, ARRUMAR EXCLUSAO DE REGISTRO
+// ARRUMAR RETORNOS, ARRUMAR PARA PROGRAMA CONTINUAR RODANDO
+
 */ 
 
-
-esqueletoDoSistema();
+esqueletoDoSistema()
 
 module.exports = { 
-  esqueletoDoSistema,
+  esqueletoDoSistema
 }
