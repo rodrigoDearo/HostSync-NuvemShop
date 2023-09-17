@@ -2,6 +2,54 @@ process.stdin.setEncoding('utf-8');
 
 /* ---------------------- IMPORTAÇÃO DE MÓDULOS ----------------------*/
 const conexao = require('node-firebird');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * ESSA FUNÇÃO CRIA EM CASO DE AUSÊNCIA, UM GERADOR DE ID A SER USADO NA TABELA NOTIFICACOES_HOSTSYNC
+ * @param {*} config 
+ * @returns 
+ */
+async function criarGeneratorID(config){
+  return new Promise(async (resolve, reject) => {
+    try {
+      
+      conexao.attach(config, function (err, db){
+        if(err)
+          throw err
+
+        let codigo = `EXECUTE BLOCK
+        AS
+        BEGIN
+            IF (NOT EXISTS (
+                SELECT 1
+                FROM RDB$GENERATORS
+                WHERE RDB$GENERATOR_NAME = 'GEN_NOTIFICACOES_HOSTSYNC_ID'
+            ))
+            THEN
+            BEGIN
+                EXECUTE STATEMENT 'CREATE SEQUENCE GEN_NOTIFICACOES_HOSTSYNC_ID';
+            END
+        END
+        `;
+
+        db.query(codigo, function (err, result){
+          if (err)
+            throw err;
+
+          console.log('GERADOR DE ID GEN_NOTIFICACOES_HOSTSYNC_ID FOI CRIADA EM CASO DE AUSÊNCIA');
+          resolve();
+        })
+
+        db.detach();
+      })
+
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
 
 /**
  * FUNÇÃO RESPONSÁVEL POR CRIAR CASO NÃO EXISTA A TABELA NOTIFICACOES_HOSTSYNC
@@ -27,6 +75,7 @@ async function criarTabela(config){
               THEN
               BEGIN
                   EXECUTE STATEMENT 'CREATE TABLE NOTIFICACOES_HOSTSYNC (
+                      ID INTEGER NOT NULL PRIMARY KEY,
                       TIPO       VARCHAR(100),
                       OBS        VARCHAR(100),
                       IDITEM  INTEGER
@@ -36,21 +85,39 @@ async function criarTabela(config){
   
           db.query(codigo, function (err, result){
             if (err)
-              throw err;
+              gravarLogErro(err);
   
             console.log('TABELA NOTIFICACOES_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           })
   
           db.detach();
-          resolve();
         })
       } catch (error) {
-        reject(error);
+        gravarLogErro(err)
+        console.log(error);
       }
     })
   }
   
   
+
+
+
+
+
+
+
+
+//  ######   ######    #####   #####    ##   ##  ######    #####
+//   ##  ##   ##  ##  ##   ##   ## ##   ##   ##  # ## #   ##   ##
+//   ##  ##   ##  ##  ##   ##   ##  ##  ##   ##    ##     ##   ##
+//   #####    #####   ##   ##   ##  ##  ##   ##    ##     ##   ##
+//   ##       ## ##   ##   ##   ##  ##  ##   ##    ##     ##   ##
+//   ##       ##  ##  ##   ##   ## ##   ##   ##    ##     ##   ##
+//  ####     #### ##   #####   #####     #####    ####     #####
+
+
   async function criarTriggerInsertProduto(config){
     return new Promise(async(resolve, reject) => {
       try {
@@ -74,7 +141,7 @@ async function criarTabela(config){
                   ACTIVE AFTER INSERT POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''PRODUTO'', ''CADASTRADO'', NEW.id_produto);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''PRODUTO'', ''CADASTRADO'', NEW.id_produto);
                   END';
               END
           END`;
@@ -84,10 +151,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER INSERT_PRODUTO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -120,7 +187,7 @@ async function criarTabela(config){
                     ACTIVE AFTER UPDATE POSITION 0
                     AS
                     BEGIN
-                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''PRODUTO'', ''ATUALIZADO'', NEW.id_produto);
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''PRODUTO'', ''ATUALIZADO'', NEW.id_produto);
                     END';
                 END
             END`;
@@ -130,10 +197,10 @@ async function criarTabela(config){
                 throw err;
       
               console.log('TRIGGER UPDATE_PRODUTO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+              resolve();
             });
       
             db.detach();
-            resolve();
         })
   
       } catch (error) {
@@ -142,6 +209,22 @@ async function criarTabela(config){
     })
   }
 
+
+
+
+
+
+
+
+
+
+//    ####   ######   ##   ##  ######    #####
+//   ##  ##   ##  ##  ##   ##   ##  ##  ##   ##
+//  ##        ##  ##  ##   ##   ##  ##  ##   ##
+//  ##        #####   ##   ##   #####   ##   ##
+//  ##  ###   ## ##   ##   ##   ##      ##   ##
+//   ##  ##   ##  ##  ##   ##   ##      ##   ##
+//    #####  #### ##   #####   ####      #####
 
 
   async function criarTriggerInsertGrupo(config){
@@ -167,7 +250,7 @@ async function criarTabela(config){
                   ACTIVE AFTER INSERT POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRUPO'', ''CADASTRADO'', NEW.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''GRUPO'', ''CADASTRADO'', NEW.ID);
                   END';
               END
           END`;
@@ -177,10 +260,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER INSERT_GRUPO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -213,7 +296,7 @@ async function criarTabela(config){
                     ACTIVE AFTER UPDATE POSITION 0
                     AS
                     BEGIN
-                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRUPO'', ''ATUALIZADO'', NEW.ID);
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''GRUPO'', ''ATUALIZADO'', NEW.ID);
                     END';
                 END
             END`;
@@ -223,10 +306,10 @@ async function criarTabela(config){
                 throw err;
       
               console.log('TRIGGER UPDATE_GRUPO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+              resolve();
             });
       
             db.detach();
-            resolve();
         })
   
       } catch (error) {
@@ -259,7 +342,7 @@ async function criarTabela(config){
                     ACTIVE AFTER DELETE POSITION 0
                     AS
                     BEGIN
-                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRUPO'', ''DELETADO'', OLD.ID);
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''GRUPO'', ''DELETADO'', OLD.ID);
                     END';
                 END
             END`;
@@ -269,10 +352,10 @@ async function criarTabela(config){
                 throw err;
       
               console.log('TRIGGER DELETE_GRUPO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+              resolve();
             });
       
             db.detach();
-            resolve();
         })
   
       } catch (error) {
@@ -280,6 +363,23 @@ async function criarTabela(config){
       }
     })
   }
+
+
+
+
+
+
+
+
+
+
+//   #####   ##   ##  ######              ####   ######   ##   ##  ######    #####
+//  ##   ##  ##   ##   ##  ##            ##  ##   ##  ##  ##   ##   ##  ##  ##   ##
+//  #        ##   ##   ##  ##           ##        ##  ##  ##   ##   ##  ##  ##   ##
+//   #####   ##   ##   #####            ##        #####   ##   ##   #####   ##   ##
+//       ##  ##   ##   ##  ##           ##  ###   ## ##   ##   ##   ##      ##   ##
+//  ##   ##  ##   ##   ##  ##            ##  ##   ##  ##  ##   ##   ##      ##   ##
+//   #####    #####   ######              #####  #### ##   #####   ####      #####
 
 
   async function criarTriggerInsertSubGrupo(config){
@@ -305,7 +405,7 @@ async function criarTabela(config){
                   ACTIVE AFTER INSERT POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''SUBGRUPO'', ''CADASTRADO'', NEW.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''SUBGRUPO'', ''CADASTRADO'', NEW.ID);
                   END';
               END
           END`;
@@ -315,10 +415,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER INSERT_SUBGRUPO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -351,7 +451,7 @@ async function criarTabela(config){
                     ACTIVE AFTER UPDATE POSITION 0
                     AS
                     BEGIN
-                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''SUBGRUPO'', ''ATUALIZADO'', NEW.ID);
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''SUBGRUPO'', ''ATUALIZADO'', NEW.ID);
                     END';
                 END
             END`;
@@ -361,10 +461,10 @@ async function criarTabela(config){
                 throw err;
       
               console.log('TRIGGER UPDATE_SUBGRUPO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+              resolve();
             });
       
             db.detach();
-            resolve();
         })
   
       } catch (error) {
@@ -397,7 +497,7 @@ async function criarTabela(config){
                     ACTIVE AFTER DELETE POSITION 0
                     AS
                     BEGIN
-                        INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''SUBGRUPO'', ''DELETADO'', OLD.ID);
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''SUBGRUPO'', ''DELETADO'', OLD.ID);
                     END';
                 END
             END`;
@@ -407,10 +507,10 @@ async function criarTabela(config){
                 throw err;
       
               console.log('TRIGGER DELETE_SUBGRUPO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
+              resolve();
             });
       
             db.detach();
-            resolve();
         })
   
       } catch (error) {
@@ -418,6 +518,23 @@ async function criarTabela(config){
       }
     })
   }
+
+
+
+
+
+
+
+
+
+
+//  ##   ##    ##     ######    ####      ##       ####     ##      #####
+//  ##   ##   ####     ##  ##    ##      ####     ##  ##   ####    ##   ##
+//   ## ##   ##  ##    ##  ##    ##     ##  ##   ##       ##  ##   ##   ##
+//   ## ##   ##  ##    #####     ##     ##  ##   ##       ##  ##   ##   ##
+//    ###    ######    ## ##     ##     ######   ##       ######   ##   ##
+//    ###    ##  ##    ##  ##    ##     ##  ##    ##  ##  ##  ##   ##   ##
+//     #     ##  ##   #### ##   ####    ##  ##     ####   ##  ##    #####
 
 
   async function criarTriggerInsertVariacao(config){
@@ -443,7 +560,7 @@ async function criarTabela(config){
                   ACTIVE AFTER INSERT POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''VARIACAO'', ''CADASTRADO'', NEW.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''VARIACAO'', ''CADASTRADO'', NEW.ID);
                   END';
               END
           END`;
@@ -453,10 +570,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER INSERT_VARIACAO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -489,7 +606,7 @@ async function criarTabela(config){
                   ACTIVE AFTER UPDATE POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''VARIACAO'', ''ATUALIZADO'', NEW.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''VARIACAO'', ''ATUALIZADO'', NEW.ID);
                   END';
               END
           END`;
@@ -499,10 +616,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER UPDATE_VARIACAO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -535,7 +652,7 @@ async function criarTabela(config){
                   ACTIVE AFTER DELETE POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''VARIACAO'', ''DELETADO'', OLD.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''VARIACAO'', ''DELETADO'', OLD.ID);
                   END';
               END
           END`;
@@ -545,10 +662,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER DELETE_VARIACAO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -556,6 +673,23 @@ async function criarTabela(config){
       }
     })
   }
+
+
+
+
+
+
+
+
+
+  
+//    ####   ######     ##     #####    #######
+//   ##  ##   ##  ##   ####     ## ##    ##   #
+//  ##        ##  ##  ##  ##    ##  ##   ## #
+//  ##        #####   ##  ##    ##  ##   ####
+//  ##  ###   ## ##   ######    ##  ##   ## #
+//   ##  ##   ##  ##  ##  ##    ## ##    ##   #
+//    #####  #### ##  ##  ##   #####    #######
 
 
   async function criarTriggerInsertGrade(config){
@@ -581,7 +715,7 @@ async function criarTabela(config){
                   ACTIVE AFTER INSERT POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRADE'', ''CADASTRADO'', NEW.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''GRADE'', ''CADASTRADO'', NEW.ID);
                   END';
               END
           END`;
@@ -591,10 +725,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER INSERT_GRADE_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -627,7 +761,7 @@ async function criarTabela(config){
                   ACTIVE AFTER UPDATE POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRADE'', ''ATUALIZADO'', NEW.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''GRADE'', ''ATUALIZADO'', NEW.ID);
                   END';
               END
           END`;
@@ -637,10 +771,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER UPDATE_GRADE_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -673,7 +807,7 @@ async function criarTabela(config){
                   ACTIVE AFTER DELETE POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (tipo, obs, iditem) VALUES (''GRADE'', ''DELETADO'', OLD.ID);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''GRADE'', ''DELETADO'', OLD.ID);
                   END';
               END
           END`;
@@ -683,10 +817,10 @@ async function criarTabela(config){
               throw err;
   
             console.log('TRIGGER DELETE_GRADE_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            resolve();
           });
           
           db.detach();
-          resolve()
         });
   
       } catch (error) {
@@ -695,18 +829,82 @@ async function criarTabela(config){
     })
   }
 
+
+
+
+
+
+
+
+
+
+//  ####      #####     ####    #####
+//   ##      ##   ##   ##  ##  ##   ##
+//   ##      ##   ##  ##       #
+//   ##      ##   ##  ##        #####
+//   ##   #  ##   ##  ##  ###       ##
+//   ##  ##  ##   ##   ##  ##  ##   ##
+//  #######   #####     #####   #####
+
+
+  // FUNÇÃO PARA GRAVAR MENSAGEM NO ARQUIVO LOG
+  function gravarLog(mensagem) {
+    if (!fs.existsSync('../logs')) {
+      fs.mkdirSync('../logs');
+    }
+    const data = new Date();
+    data.setHours(data.getHours() - 3);
+    const dataFormatada = `${data.getFullYear()}-${data.getMonth() + 1}-${data.getDate()}`;
+    const logMessage = `[${data.toISOString()}]: ${mensagem}\n`;
+    const logFileName = `../../../logs/log_${dataFormatada}.txt`;
+    const logFilePath = path.join(__dirname, logFileName);
+    fs.appendFile(logFilePath, logMessage, (err) => {
+      if (err) {
+        console.error('Erro ao gravar o log:', err);
+      }
+    });
+  }
+  
+  // FUNÇÃO PARA GRAVAR MENSAGEM DE ERRO NO ARQUIVO LOG
+  function gravarLogErro(mensagem) {
+    if (!fs.existsSync('../logs')) {
+      fs.mkdirSync('../logs');
+    }
+    
+    if (!fs.existsSync('../logs/logsErr')) {
+      fs.mkdirSync('../logs/logsErr');
+    }
+  
+    const data = new Date();
+    data.setHours(data.getHours() - 3);
+    const dataFormatada = `${data.getFullYear()}-${data.getMonth() + 1}-${data.getDate()}`;
+    const logMessage = `[${data.toISOString()}]: ${mensagem}\n`;
+    const logFileName = `../../../logs/logsErr/log_${dataFormatada}Err.txt`;
+    const logFilePath = path.join(__dirname, logFileName);
+  
+    fs.appendFile(logFilePath, logMessage, (err) => {
+      if (err) {
+        console.error('Erro ao gravar o log:', err);
+      }
+    });
+  }
+
+
   module.exports = {
+    criarTabela,
+    criarGeneratorID,
     criarTriggerUpdateProduto,
     criarTriggerInsertProduto,
     criarTriggerInsertGrupo,
     criarTriggerUpdateGrupo,
+    criarTriggerDeleteGrupo,
     criarTriggerInsertSubGrupo,
     criarTriggerUpdateSubGrupo,
+    criarTriggerDeleteSubGrupo,
     criarTriggerInsertVariacao,
     criarTriggerUpdateVariacao,
     criarTriggerDeleteVariacao,
     criarTriggerInsertGrade,
     criarTriggerUpdateGrade,
-    criarTriggerDeleteGrade,
-    criarTabela
+    criarTriggerDeleteGrade
   };

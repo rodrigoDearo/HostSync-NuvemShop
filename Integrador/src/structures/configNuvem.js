@@ -10,6 +10,7 @@ const { response } = require('express');
 const { Resolver } = require('dns');
 const { Console } = require('console');
 
+
 var store_id, config, data;
 
 async function gerarAccessToken(){
@@ -39,7 +40,7 @@ async function gerarAccessToken(){
  * @param {*} caminho O CAMINHO PARA PASTA HOST EM QUE SE DEVE FAZER A LEITURA DAS IMAGENS
  * @returns {data} STRING COM A IMAGEM CODIFICADA EM BASE64
  */
-async function cadastroImagem(img, caminho){
+async function cadastroImagem(img, caminho, ID_PRODUTO, store_id, config, response){
   return new Promise(async (resolve, reject) => {
     try {
       const imageFilePath = `${caminho}/${img}`;
@@ -52,6 +53,59 @@ async function cadastroImagem(img, caminho){
         "attachment": base64Image
       }
       resolve(data)
+    } catch{
+      const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
+      if(dados.produtos[`${ID_PRODUTO}`].img_id != ""){
+        let imagem = dados.produtos[`${ID_PRODUTO}`].img_id;
+        axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images/${imagem}`, config)
+        .then(() => {
+          dados.produtos[`${ID_PRODUTO}`].img_id = "";
+          fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+          resolve('deleteImrpovisadoIMG');
+        })
+      }
+    } 
+    
+    
+  })
+}
+
+
+
+async function padronziarCadastroVariante(idNuvem){
+  return new Promise (async (resolve, reject) => {
+    try {
+      await retornaCampo('app_token')
+      .then(response => {
+          config = {
+              headers: {
+                Authentication: `bearer ${response}`,
+                'User-Agent': `HostSync (7752)`,
+                'Content-Type': 'application/json'
+              },
+            };
+      })
+      .then(async () => {
+          await retornaCampo('store_id')
+          .then(response => {
+              store_id = response;
+          })
+      })
+      .then(() => {
+          data = {
+          attributes: [
+            {
+              pt: "Variantes"
+            }
+          ]
+        }
+      })
+      .then(() => {
+          axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}`, data, config)
+          .then(() => {
+            resolve()
+          })
+      })
     } catch (error) {
       reject(error)
     }
@@ -63,12 +117,15 @@ async function cadastroImagem(img, caminho){
 async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO, BARRAS){
   return new Promise(async (resolve, reject) => {
     try {
-      const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
-      const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+      const arquivoLidoProdutos = await fsPromises.readFile('./src/build/nuvem/produtosNuvem.json', 'utf8');
+      const arquivoLidoCategorias = await fsPromises.readFile('./src/build/nuvem/categoriaNuvem.json', 'utf8');
+
+      const dados = JSON.parse(arquivoLidoProdutos);
+      const categorias = JSON.parse(arquivoLidoCategorias)
 
       let CATEGORIA_PRODUTO;
 
-      if((SUBGRUPO==null)&&(GRUPO=='0')){
+      if((SUBGRUPO==null)&&((GRUPO=='0')||(GRUPO==null)||(categorias.categorias[GRUPO]==undefined))){
         CATEGORIA_PRODUTO == null;
       }
       else if(SUBGRUPO==null){
@@ -89,21 +146,33 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
       else{
         if(STATUS=='ATIVO'){
           await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS)
-          .then(response => {
+          .then(async (response) => {
               if (response.error) {
                   // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                   console.log('Erro ao cadastrar produto:', PRODUTO);
               } else {
                   // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
                 console.log(`${PRODUTO} FOI CADASTRADO COM SUCESSO`)
-                dados.produtos[ID_PRODUTO] = response.id;
-                  
+                dados.produtos[ID_PRODUTO] = {
+                  "id": response.id,
+                  "img_id": "",
+                  "variantePrimal": response.variants[0].id,
+                  "variantes": {
+
+                  }
+                }
+                
                 fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-                resolve();
+                await padronziarCadastroVariante(response.id)
+                .then(() => {
+                  resolve()
+                })
               }
           })
           .catch((err) => {
-              console.log('Erro ao cadastrar o produto de ID:', ID_PRODUTO);
+              console.log(err)
+              console.log('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO);
+              gravarLogErro('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO)
           });
         }
         else{
@@ -156,7 +225,7 @@ async function definirRequisicaoCadastroProduto(nome, estoque, preco, descricao,
               variants: [
                 {
                   price: `${preco}`,
-                  stock: estoque,
+                  stock: estoque,  
                 }
               ],
               description: descricao,
@@ -196,15 +265,6 @@ async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, cate
 
           axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, data, config)
           .then((response) => {
-            if(foto!=null){
-              retornaCampo('caminho_imagens')
-              .then(responseCaminho => {
-                cadastroImagem(foto, responseCaminho)
-                .then(dataEnvio => {
-                  axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images`, dataEnvio, config)
-                })
-              })
-            }
               resolve(response.data);
           })
           .catch((error) => {
@@ -221,16 +281,14 @@ async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, cate
 
 
 async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO, BARRAS){
-  return new Promise(async (resolve, reject) => {
-    try {
-      return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
           const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
           const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
 
           let CATEGORIA_PRODUTO;
   
-          if((SUBGRUPO==null)&&(GRUPO=='0')){
+          if((SUBGRUPO==null)&&((GRUPO=='0')||(GRUPO==null))){
             CATEGORIA_PRODUTO == null;
           }
           else if(SUBGRUPO==null){
@@ -246,31 +304,66 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
   
           // VERIFICA SE O PRODUTO EXISTE NO BANCO DE PRODUTOS NUVEM
           if (dados.produtos[ID_PRODUTO]){
-              if(STATUS=='ATIVO'){
-                await definirRequisicaoAtualizarProduto(PRODUTO, ESTOQUE, VALOR_VENDA, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS);
+              if((STATUS=='ATIVO')&&(ESTOQUE>0)){
+                await definirRequisicaoAtualizarProduto(PRODUTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS);
   
-                let idNuvem = dados.produtos[ID_PRODUTO];
+                let idVariante = dados.produtos[ID_PRODUTO].variantePrimal
+                let idNuvem = dados.produtos[ID_PRODUTO].id;
                 axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}`, data, config)
-                .then((response) => {
-                  console.log(response)
+                .then(async (response) => {
+
                   console.log(`${PRODUTO} FOI ATUALIZADO COM SUCESSO`)
                   if(FOTO!=null){
                     retornaCampo('caminho_imagens')
                     .then(responseCaminho => {
-                      cadastroImagem(FOTO, responseCaminho)
+                      cadastroImagem(FOTO, responseCaminho, ID_PRODUTO, store_id, config, response)
                       .then(dataEnvio => {
-                        axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images`, dataEnvio, config)
+                        if(dataEnvio != "deleteImrpovisadoIMG"){
+                          if(dados.produtos[`${ID_PRODUTO}`].img_id==""){
+                            axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images`, dataEnvio, config)
+                            .then(response => {
+                              dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
+                              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+                            })
+                          }
+                          else{
+                            let imagem = dados.produtos[`${ID_PRODUTO}`].img_id;
+                            dataEnvio.id = imagem;
+                            axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images/${imagem}`, dataEnvio, config)
+                            .then(response => {
+                              dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
+                              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+                            })
+                          }
+                        }
                       })
                     })
+                    .catch(() => { 
+                      reject()
+                    })
                   }
+                  else{ // DELETE IMG
+                    if(dados.produtos[`${ID_PRODUTO}`].img_id != ""){
+                      dados.produtos[`${ID_PRODUTO}`].img_id = "";
+                      fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+                    }
+                  }
+                })
+                .then(async () => {
+                  await definirAtualizacaoEstoqueEpreco(ESTOQUE, VALOR_VENDA)
+                  
+                  axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}/variants/${idVariante}`, data, config)
+                  .then(() => {
+                    resolve()
+                  })
                 })
                 .catch((error) => {
                     console.log(error.response.data);
                     resolve({ error: true });
                 });
               }
-              else if(STATUS=="INATIVO"){
-                let idNuvem = dados.produtos[ID_PRODUTO];
+              else if((STATUS=="INATIVO")||(ESTOQUE<=0)){
+                let idNuvem = dados.produtos[ID_PRODUTO].id;
                 let config;
                 await retornaCampo('app_token')
                 .then(response => {
@@ -289,33 +382,52 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                 })
                 .then(() => {
                   axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}`, config)
-                  .then(() => {
-                    delete dados.produtos[ID_PRODUTO];
+                  .then(async () => {
+                    await deletarVariacoesDoArquivo(ID_PRODUTO)
+                    .then(() => {
+                      delete dados.produtos[ID_PRODUTO]
+                    })
+
                     fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-                    console.log(`${PRODUTO} FOI DELETADO COM SUCESSO`)
+                    console.log(`${PRODUTO} FOI DELETADO COM SUCESSO`);
                   })
+                })
+                .then(() => {
+                  resolve()
                 })
                 
               }        
           }
           else{
-            if(STATUS=='ATIVO'){
+            if((STATUS=='ATIVO')&&(ESTOQUE>0)){
               await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS)
-              .then(response => {
+              .then(async response => {
                   if (response.error) {
                       // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                       console.log('Erro ao cadastrar produto:', PRODUTO);
                   } else {
                       // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
                     console.log(`${PRODUTO} FOI CADASTRADO COM SUCESSO`)
-                    dados.produtos[ID_PRODUTO] = response.id;
+                    dados.produtos[ID_PRODUTO] = {
+                      "id": response.id,
+                      "img_id": "",
+                      "variantePrimal": response.variants[0].id,
+                      "variantes": {
+    
+                      }
+                    }
                     
                     fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-
+                    await padronziarCadastroVariante(response.id)
+                    .then(() => {
+                      resolve()
+                    })
                   }
+                resolve()
               })
               .catch((err) => {
-                  console.log('Erro ao cadastrar o produto de ID:', ID_PRODUTO);
+                  console.log('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO);
+                  gravarLogErro('ERRO CODE 2: Erro ao cadastrar o produto de ID: ' + ID_PRODUTO)
               });
             }
             else{
@@ -329,19 +441,7 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
             reject(error)
         }
       })
-    } catch (error) {
-      reject(error)
-    }
-
-  })
 }
-
-
-
-
-
-
-
 
 
 
@@ -355,7 +455,7 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
  * @param {*} barras DO PRODUO
  * @returns 
  */
-async function definirRequisicaoAtualizarProduto(nome, estoque, preco, descricao, categoria, barras){
+async function definirRequisicaoAtualizarProduto(nome, descricao, categoria, barras){
   return new Promise(async(resolve, reject) => {
       await retornaCampo('app_token')
       .then(response => {
@@ -385,13 +485,45 @@ async function definirRequisicaoAtualizarProduto(nome, estoque, preco, descricao
           }
 
           if(barras!=null){
-            data.variants[0].barcode = barras
+            data.barcode = barras
           }
       })
       .then(() => {
           resolve();
       })
   })
+}
+
+
+
+async function definirAtualizacaoEstoqueEpreco(estoque, preco){
+  return new Promise(async(resolve, reject) => {
+    await retornaCampo('app_token')
+    .then(response => {
+        config = {
+            headers: {
+              Authentication: `bearer ${response}`,
+              'User-Agent': `HostSync (7752)`,
+              'Content-Type': 'application/json'
+            },
+          };
+    })
+    .then(async () => {
+        await retornaCampo('store_id')
+        .then(response => {
+            store_id = response;
+        })
+    })
+    .then(() => {
+        data = {
+          price: `${preco}`,
+          stock: estoque
+    }
+    })
+    .then(() => {
+        resolve();
+    })
+})
 }
 
 
@@ -403,13 +535,13 @@ async function definirRequisicaoAtualizarProduto(nome, estoque, preco, descricao
 
 
   
-//    #####   ##   ##  ######              ####     ##     ######   #######    ####    #####   ######    ####      ##      #####
-//   ##   ##  ##   ##   ##  ##       ##   ##  ##   ####    # ## #    ##   #   ##  ##  ##   ##   ##  ##    ##      ####    ##   ##
-//   #        ##   ##   ##  ##      ##   ##       ##  ##     ##      ## #    ##       ##   ##   ##  ##    ##     ##  ##   #
-//    #####   ##   ##   #####      ##    ##       ##  ##     ##      ####    ##       ##   ##   #####     ##     ##  ##    #####
-//        ##  ##   ##   ##  ##    ##     ##       ######     ##      ## #    ##  ###  ##   ##   ## ##     ##     ######        ##
-//   ##   ##  ##   ##   ##  ##   ##       ##  ##  ##  ##     ##      ##   #   ##  ##  ##   ##   ##  ##    ##     ##  ##   ##   ##
-//    #####    #####   ######   ##         ####   ##  ##    ####    #######    #####   #####   #### ##   ####    ##  ##    #####
+//    ####     ##     ######   #######    ####    #####   ######    ####      ##      #####
+//   ##  ##   ####    # ## #    ##   #   ##  ##  ##   ##   ##  ##    ##      ####    ##   ##
+//  ##       ##  ##     ##      ## #    ##       ##   ##   ##  ##    ##     ##  ##   #
+//  ##       ##  ##     ##      ####    ##       ##   ##   #####     ##     ##  ##    #####
+//  ##       ######     ##      ## #    ##  ###  ##   ##   ## ##     ##     ######        ##
+//   ##  ##  ##  ##     ##      ##   #   ##  ##  ##   ##   ##  ##    ##     ##  ##   ##   ##
+//    ####   ##  ##    ####    #######    #####   #####   #### ##   ####    ##  ##    #####
 
 
 /**
@@ -418,6 +550,7 @@ async function definirRequisicaoAtualizarProduto(nome, estoque, preco, descricao
  * @param {*} NOME NOME DA CATEGORIA A SER CADASTRADA OU ALTERADO
  */  
 async function tratativaDeCategoriasNuvem(ID, NOME) {
+  return new Promise(async (resolve, reject) => {
     try {
         const categoriasjson = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
 
@@ -426,7 +559,7 @@ async function tratativaDeCategoriasNuvem(ID, NOME) {
         } else {
             try {
                 const response = await cadastrarCategoriaNuvem(NOME);
-                categoriasjson.categorias[ID] = {
+                categoriasjson.categorias[`${ID}`] = {
                     "id": response.id,
                     "nome": NOME,
                     "subcategorias": {}
@@ -437,11 +570,15 @@ async function tratativaDeCategoriasNuvem(ID, NOME) {
             } catch (error) {
                 console.log(`ERRO AO CRIAR CATEGORIA ${NOME}`);
                 gravarLogErro(`ERRO AO CRIAR CATEGORIA ${NOME}`);
+                reject(error)
             }
         }
+        
+        resolve()
     } catch (error) {
-        console.error(error);
+      reject(error);
     }
+  })
 }
   
 
@@ -456,32 +593,32 @@ async function cadastrarCategoriaNuvem(nome){
     try {
       
       await retornaCampo('app_token')
-        .then(response => {
-            config = {
-                headers: {
-                  Authentication: `bearer ${response}`,
-                  'User-Agent': `HostSync (7752)`,
-                  'Content-Type': 'application/json'
-                },
-              };
-        })
-        .then(async () => {
-            await retornaCampo('store_id')
-            .then(response => {
-                store_id = response;
-            })
-        })
-        .then(() => {
-            data = {
-                name: nome
-            }
-        })
-        .then(() => {
-          axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/categores`, data, config)
+      .then(response => {
+          config = {
+              headers: {
+                Authentication: `bearer ${response}`,
+                'User-Agent': `HostSync (7752)`,
+                'Content-Type': 'application/json'
+              },
+            };
+      })
+      .then(async () => {
+          await retornaCampo('store_id')
           .then(response => {
-            console.log(`CATEGORIA ${nome} CRIADA COM SUCESSO`);
-            gravarLog(`CATEGORIA ${nome} CRIADA COM SUCESSO`)
-            resolve(response.data)
+              store_id = response;
+          })
+      })
+      .then(async () => {
+          data = {
+              name: nome
+          }
+      })
+      .then(() => {
+        axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/categories`, data, config)
+        .then(response => {
+          console.log(`CATEGORIA ${nome} CRIADA COM SUCESSO`);
+          gravarLog(`CATEGORIA ${nome} CRIADA COM SUCESSO`)
+          resolve(response.data)
           })
           .catch(() => {
             reject();
@@ -499,6 +636,114 @@ async function cadastrarCategoriaNuvem(nome){
 
   
 
+async function alterarCategoriaNuvem(idHost, novoNome){
+  return new Promise(async (resolve, reject) => {
+    try {
+      const categoriasjson = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+
+      let idNuvem = categoriasjson.categorias[idHost]['id'];
+
+      await retornaCampo('app_token')
+      .then(response => {
+          config = {
+              headers: {
+                Authentication: `bearer ${response}`,
+                'User-Agent': `HostSync (7752)`,
+                'Content-Type': 'application/json'
+              },
+            };
+      })
+      .then(async () => {
+          await retornaCampo('store_id')
+          .then(response => {
+              store_id = response;
+          })
+      })
+      .then(() => {
+          data = {
+              name: novoNome
+          }
+      })
+      .then(() => {
+        axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/categories/${idNuvem}`, data, config)
+        .then(() => {
+          console.log(`CATEGORIA ${novoNome} ALTERADA COM SUCESSO`);
+          gravarLog(`CATEGORIA ${novoNome} ALTERADA COM SUCESSO`)
+          
+          categoriasjson.categorias[idHost]['nome'] = novoNome;
+          fs.writeFileSync('./src/build/nuvem/categoriaNuvem.json', JSON.stringify(categoriasjson, null, 2));
+        })
+      })
+      .catch(() => {
+        reject(error);
+      })
+
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+
+async function deletarCategoriaNuvem(idNuvem){
+  return new Promise(async (resolve, reject) => {
+    try {
+
+      await retornaCampo('app_token')
+      .then(response => {
+          config = {
+              headers: {
+                Authentication: `bearer ${response}`,
+                'User-Agent': `HostSync (7752)`,
+                'Content-Type': 'application/json'
+              },
+            };
+      })
+      .then(async () => {
+          await retornaCampo('store_id')
+          .then(response => {
+              store_id = response;
+          })
+      })
+      .then(() => {
+        axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/categories/${idNuvem}`, config)
+        .then(() => {
+          console.log(`CATEGORIA DE ID ${idNuvem} DELETADA COM SUCESSO`);
+          gravarLog(`CATEGORIA DE ID ${idNuvem} DELETADA COM SUCESSO`)
+          
+          resolve();
+        })
+      })
+      .catch(() => {
+        reject(error);
+      })
+
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+
+
+
+
+
+
+
+
+//   #####   ##   ##  ######              ####     ##     ######   #######    ####    #####   ######    ####      ##      #####
+//  ##   ##  ##   ##   ##  ##            ##  ##   ####    # ## #    ##   #   ##  ##  ##   ##   ##  ##    ##      ####    ##   ##
+//  #        ##   ##   ##  ##           ##       ##  ##     ##      ## #    ##       ##   ##   ##  ##    ##     ##  ##   #
+//   #####   ##   ##   #####            ##       ##  ##     ##      ####    ##       ##   ##   #####     ##     ##  ##    #####
+//       ##  ##   ##   ##  ##           ##       ######     ##      ## #    ##  ###  ##   ##   ## ##     ##     ######        ##
+//  ##   ##  ##   ##   ##  ##            ##  ##  ##  ##     ##      ##   #   ##  ##  ##   ##   ##  ##    ##     ##  ##   ##   ##
+//   #####    #####   ######              ####   ##  ##    ####    #######    #####   #####   #### ##   ####    ##  ##    #####
+
+
 /**
  * ESSA FUNÇÃO É ACIONADA PARA CADASTRAR UMA SUBCATEGORIA NA CARGA INICIAL, ELA VERIFICA SE A SUBCATEGORIA JA EXISTE E É RESPONSÁVEL POR ADICIONAR A SUBCATEGORIA AO JSON
  * @param {*} ID DA SUBCATEGORIA
@@ -506,34 +751,38 @@ async function cadastrarCategoriaNuvem(nome){
  * @param {*} SUBGRUPO NOME DA SUBCATEGORIA
  */
 async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
+  return new Promise(async (resolve, reject) => {
     try {
-      const categoriasjson = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+        const categoriasjson = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
 
-      if (!categoriasjson.categorias[ID_GRUPO]) {
-          console.log(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`)
-          gravarLogErro(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`);
-      
-      } else {
-          try {
-              if(categoriasjson.categorias[ID_GRUPO].subcategorias[ID]){
-                console.log(`SUBCATEGORIA ${SUBGRUPO} JA ESTA CADASTRADA`)
-              }
-              else{
-                let idGrupoNuvem = categoriasjson.categorias[ID_GRUPO].id;
-                const response = await cadastrarSubCategoriaNuvem(SUBGRUPO, idGrupoNuvem);
-                categoriasjson.categorias[ID_GRUPO].subcategorias[ID] = response.id;
+        if (!categoriasjson.categorias[ID_GRUPO]) {
+            console.log(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`)
+            gravarLogErro(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`);
+        
+        } else {
+            try {
+                if(categoriasjson.categorias[ID_GRUPO].subcategorias[ID]){
+                  console.log(`SUBCATEGORIA ${SUBGRUPO} JA ESTA CADASTRADA`)
+                }
+                else{
+                  let idGrupoNuvem = categoriasjson.categorias[ID_GRUPO].id;
+                  const response = await cadastrarSubCategoriaNuvem(SUBGRUPO, idGrupoNuvem);
+                  categoriasjson.categorias[ID_GRUPO].subcategorias[ID] = response.id;
 
-                fs.writeFileSync('./src/build/nuvem/categoriaNuvem.json', JSON.stringify(categoriasjson, null, 2));
-                console.log(`SUBCATEGORIA ${SUBGRUPO} CADASTRADA COM SUCESSO`);
-              }
-          } catch (error) {
-              console.log(`ERRO AO CRIAR SUBCATEGORIA ${SUBGRUPO}`);
-              gravarLogErro(`ERRO AO CRIAR SUBCATEGORIA ${SUBGRUPO}`);
-          }
+                  fs.writeFileSync('./src/build/nuvem/categoriaNuvem.json', JSON.stringify(categoriasjson, null, 2));
+                  console.log(`SUBCATEGORIA ${SUBGRUPO} CADASTRADA COM SUCESSO`);
+                }
+            } catch (error) {
+                console.log(`ERRO AO CRIAR SUBCATEGORIA ${SUBGRUPO}`);
+                gravarLogErro(`ERRO AO CRIAR SUBCATEGORIA ${SUBGRUPO}`);
+            }
+        }
+
+        resolve()
+      } catch (error) {
+        reject(error);
       }
-    } catch (error) {
-        console.error(error);
-    }
+    })
   }
 
   
@@ -590,6 +839,54 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
 
 
 
+  async function alterarSubCategoriaNuvem(idGrupo, idSubGrupo, novoNome){
+    return new Promise(async (resolve, reject) => {
+      try {
+        const categoriasjson = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'));
+  
+        let idNuvem = categoriasjson.categorias[idGrupo].subcategorias[idSubGrupo];
+  
+        await retornaCampo('app_token')
+        .then(response => {
+            config = {
+                headers: {
+                  Authentication: `bearer ${response}`,
+                  'User-Agent': `HostSync (7752)`,
+                  'Content-Type': 'application/json'
+                },
+              };
+        })
+        .then(async () => {
+            await retornaCampo('store_id')
+            .then(response => {
+                store_id = response;
+            })
+        })
+        .then(() => {
+            data = {
+                name: novoNome
+            }
+        })
+        .then(() => {
+          axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/categories/${idNuvem}`, data, config)
+          .then(() => {
+            console.log(`SUBCATEGORIA ${novoNome} ALTERADA COM SUCESSO`);
+            gravarLog(`SUBCATEGORIA ${novoNome} ALTERADA COM SUCESSO`)
+          })
+        })
+        .catch(() => {
+          reject(error);
+        })
+  
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+
+
 
 
 
@@ -606,7 +903,26 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
   //      #     ##  ##   #### ##   ####    ##  ##     ####   ##  ##    #####   ##         #####  #### ##  ##  ##   #####    #######
 
 
-  async function tratativaDeVariacaoNuvem(nome, id_produto, estoque){
+  async function tratativaDeVariacaoNuvem(id, nome, idProduto, idHost, estoque, preco){
+    return new Promise(async (resolve, reject) => {
+      try {
+        const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
+
+        await criarVariacao(nome, idProduto, estoque, preco)
+        .then(response => {
+          dados.produtos[idHost].variantes[id] = response.id;
+          fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados, null, 2));
+          resolve(response.id)
+        })
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+
+
+  async function criarVariacao(nome, id_produto, estoque, preco){
     return new Promise(async (resolve, reject) => {
       try {
         
@@ -630,17 +946,14 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               data = {
                 values: [
                   {
-                    "en": nome
+                    "pt": nome
                   }
                 ],
-                stock: estoque
+                stock: estoque,
+                price: `${preco}`
               }
           })
           .then(() => {
-            gravarLog(`https://api.nuvemshop.com.br/v1/${store_id}/products/${id_produto}/variants`);
-            gravarLog(JSON.stringify(data));
-            gravarLog(JSON.stringify(config));
-            gravarLog(nome)
             axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${id_produto}/variants`, data, config)
             .then(response => {
               console.log(`VARIACAO ${nome} CRIADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`);
@@ -648,8 +961,8 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               resolve(response.data)
             })
           })
-          .catch(() => {
-            reject(error);
+          .catch((err) => {
+            reject(err);
           })
   
       } catch (error) {
@@ -659,6 +972,131 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
   }
 
 
+
+  async function atualizarVariacao(idVariacao, id_produto, estoque, preco){
+    return new Promise(async (resolve, reject) => {
+      try {
+        
+        await retornaCampo('app_token')
+          .then(response => {
+              config = {
+                  headers: {
+                    Authentication: `bearer ${response}`,
+                    'User-Agent': `HostSync (7752)`,
+                    'Content-Type': 'application/json'
+                  },
+                };
+          })
+          .then(async () => {
+              await retornaCampo('store_id')
+              .then(response => {
+                  store_id = response;
+              })
+          })
+          .then(() => {
+              data = {
+                stock: estoque,
+                price: `${preco}`
+              }
+          })
+          .then(() => {
+            axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${id_produto}/variants/${idVariacao}`, data, config)
+            .then(() => {
+              console.log(`VARIACAO ALTERADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`);
+              gravarLog(`VARIACAO ALTERADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`)
+              resolve()
+            })
+          })
+          .catch((err) => {
+            reject(err);
+          })
+  
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+
+
+  async function deletarVariacao(idProduto, idVariacao){
+    return new Promise(async (resolve, reject) => {
+      try {
+        
+        await retornaCampo('app_token')
+          .then(response => {
+              config = {
+                  headers: {
+                    Authentication: `bearer ${response}`,
+                    'User-Agent': `HostSync (7752)`,
+                    'Content-Type': 'application/json'
+                  },
+                };
+          })
+          .then(async () => {
+              await retornaCampo('store_id')
+              .then(response => {
+                  store_id = response;
+              })
+          })
+          .then(() => {
+            axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProduto}/variants/${idVariacao}`, config)
+            .then(() => {
+              console.log(`VARIACAO ${idVariacao} DELETADA COM SUCESSO NO PRODUTO DE ID ${idProduto}`);
+              gravarLog(`VARIACAO ${idVariacao} DELETADA COM SUCESSO NO PRODUTO DE ID ${idProduto}`)
+              resolve()
+            })
+          })
+          .catch((err) => {
+            reject(err);
+          })
+  
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+
+
+async function deletarVariacoesDoArquivo(id){
+  return new Promise(async (resolve, reject) => {
+    try {
+      const grades = JSON.parse(fs.readFileSync('./src/build/nuvem/grades.json', 'utf8'));
+
+      for (const key in grades) {
+        const produto = grades[key].PRODUTOS;
+        if (produto.hasOwnProperty(id)) {
+          delete produto[id];
+        }
+      }
+
+      fs.writeFileSync('./src/build/nuvem/grades.json', JSON.stringify(grades));
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
+
+
+  })
+}
+
+
+
+
+
+
+
+
+
+
+//  ####      #####     ####    #####
+//   ##      ##   ##   ##  ##  ##   ##
+//   ##      ##   ##  ##       #
+//   ##      ##   ##  ##        #####
+//   ##   #  ##   ##  ##  ###       ##
+//   ##  ##  ##   ##   ##  ##  ##   ##
+//  #######   #####     #####   #####
 
 
   // FUNÇÃO PARA GRAVAR MENSAGEM NO ARQUIVO LOG
@@ -706,7 +1144,12 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
 module.exports = {
     tratativaDeProdutosNuvem,
     tratativaDeCategoriasNuvem,
+    alterarCategoriaNuvem,
+    deletarCategoriaNuvem,
     tratativaDeSubCategoriasNuvem,
+    alterarSubCategoriaNuvem,
     tratativaDeVariacaoNuvem,
-    novoRegistroProdutoNuvem
+    novoRegistroProdutoNuvem,
+    atualizarVariacao,
+    deletarVariacao
 }
