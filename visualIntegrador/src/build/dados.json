@@ -1,0 +1,20 @@
+{
+  "dadosApp": {
+    "tray": {
+      "code": "",
+      "access_token": "",
+      "refresh_token": "",
+      "date_expiration_access_token": "",
+      "date_expiration_refresh_token": "",
+      "url": ""
+    },
+    "nuvem": {
+      "store_id": "3650229",
+      "app_token": "cdeaeb4b3345313ad44e12f6c8daac951524d239"
+    },
+    "host": {
+      "caminho_banco": "C:/TSD/HOST",
+      "caminho_imagens":"C:/TSD/Host/imgProdutos"
+    }
+  }
+}
