@@ -268,6 +268,19 @@ function hello(){
 
 
 
+function cargaInicial(){
+  conexao.attach(configBanco, function(err, db){
+      if(err)
+        throw err
+
+      db.query("SELECT CoUNT(*) as numeroRegistros FROM PRODUTOS", function*(err, result){
+        if(err)
+        throw err
+
+        let numeroRegistros 
+      })
+  })
+}
 
 
 
