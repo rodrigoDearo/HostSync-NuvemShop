@@ -1,6 +1,5 @@
 /* ---------------------- IMPORTAÇÃO DE MÓDULOS ----------------------*/
 const fs = require('fs');
-const fsPromises = require('fs').promises;
 const conexao = require('node-firebird');
 const path = require('path');
 const { exec } = require('child_process');
@@ -13,7 +12,7 @@ const { retornaCampo } = require('./manipulacaoJSON');
 const { tratativaDeProdutosNuvem, tratativaDeCategoriasNuvem, tratativaDeSubCategoriasNuvem,deletarVariacao, alterarSubCategoriaNuvem, atualizarVariacao, tratativaDeVariacaoNuvem, novoRegistroProdutoNuvem, deletarCategoriaNuvem, alterarCategoriaNuvem } = require('./configNuvem');
 const { criarTabela, criarGeneratorID, criarTriggerUpdateProduto, criarTriggerInsertProduto, criarTriggerInsertGrupo, criarTriggerUpdateGrupo, criarTriggerDeleteGrupo, criarTriggerInsertSubGrupo, criarTriggerUpdateSubGrupo, criarTriggerDeleteSubGrupo, criarTriggerInsertVariacao, criarTriggerUpdateVariacao, criarTriggerDeleteVariacao, criarTriggerInsertGrade, criarTriggerUpdateGrade, criarTriggerDeleteGrade } = require('./dependenciasSQL');
 
-var caminho, config, hora = 0, guardaIDproduto;
+var caminho, config, hora = 0;
 
 
 
@@ -85,7 +84,7 @@ function esqueletoDoSistema(){
         console.log('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
         gravarLogErro('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
       })
-  })
+  })/*
   .then(async () => {
     await sincronizacaoInicialGrades();
   })
@@ -100,7 +99,7 @@ function esqueletoDoSistema(){
   })
   .then(async () => { 
     await sincronizacaoInicialVariantes();
-  })
+  })*/
   .then(async () => {
     hello();
     await sincronizarBanco();
@@ -119,21 +118,27 @@ function esqueletoDoSistema(){
 async function sincronizarBanco(){
 
   conexao.attach(config, function (err, db) {
-    if (err)
-      console.log(err)
+    if (err){
+      console.log(err);
+      gravarLog(err)
+    }
       //throw err;
  
     db.query('SELECT COUNT(*) AS numeroRegistros FROM NOTIFICACOES_HOSTSYNC', function (err, result) {
-      if (err)
-        console.log(err)
+      if (err){
+        console.log(err);
+        gravarLog(err)
+      }
         //err;
 
       let totalRegistros = result[0].NUMEROREGISTROS;
 
       if (totalRegistros > 0) {
         db.query('SELECT FIRST 1 ID as row, TIPO as tabela, OBS AS obsproduto, IDITEM AS id FROM NOTIFICACOES_HOSTSYNC', async function (err, resultNotificacao) {
-          if (err)
+          if (err){
             console.log(err);
+            gravarLog(err)
+          }
 
           let registroLido = resultNotificacao[0].ROW
           let tabelaRegistro = resultNotificacao[0].TABELA;
@@ -145,25 +150,25 @@ async function sincronizarBanco(){
             case "PRODUTO":
               db.query(`SELECT ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE, BARRAS FROM PRODUTOS WHERE ID_PRODUTO=${idRegistro}`, async function (err, result) {
                 db.detach();
-                if (err)
-                    throw err;
+                if (err){
+                  console.log(err);
+                  gravarLog(err)
+                }
                 
-                const arquivoLidoProdutos = fsPromises.readFile('./src/build/nuvem/produtosNuvem.json', 'utf8');
-                const dados = JSON.parse(arquivoLidoProdutos);
                 const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE, BARRAS } = result[0];
-                if((dados.produtos[ID_PRODUTO]!=undefined)&&(STATUS=='ATIVO')&&(ESTOQUE>0)){
+                /*if((dados.produtos[ID_PRODUTO]!=undefined)&&(STATUS=='ATIVO')&&(ESTOQUE>0)){
                   const variantes = dados.produtos[ID_PRODUTO].variantes;
 
                   for (const varianteId in variantes) {
                     novaAlteracaoVariacao(varianteId)
                   }
-                }
+                }*/
 
         
 
                 await novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, DESCRICAO_COMPLEMENTAR, GRUPO, SUBGRUPO, BARRAS)
                 .then(async () => {
-                  if(obsDoRegistro=="ATUALIZADO"){
+                  if(GRADE=='S'){
                     await sincronizarVariacaoIDespecifico(ID_PRODUTO);
                   }
                 })
@@ -262,10 +267,12 @@ async function sincronizarBanco(){
         console.log('Nenhum registro encontrado para leitura.');
         gravarLog('Nenhum registro encontrado para leitura.');
         db.detach(function (err) {
-          if (err)
+          if (err){
             console.log(err);
-            throw err;
-          setTimeout(sincronizarBanco, 3000);
+            gravarLog(err)
+          }
+            
+        setTimeout(sincronizarBanco, 3000);
         });
       }
     });
@@ -986,9 +993,14 @@ async function sincronizarVariacaoIDespecifico(id){
                 }
               } 
               else{
+                let varianteId = grades[ID_GRADE].PRODUTOS[ID_PRODUTO]
+                console.log(variantesId);
+                await novaAlteracaoVariacao(varianteId)
+              }
+            }
+            else{
                 console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
                 gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
-              }
             }
           }
 
@@ -1055,7 +1067,8 @@ async function novaAlteracaoVariacao(idVariacao){
         
       })
     } catch (error) {
-      reject(error)
+      console.log(error)
+      gravarLogErro(error)
     }
   })
 }
