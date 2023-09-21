@@ -105,6 +105,10 @@ async function padronziarCadastroVariante(idNuvem){
           .then(() => {
             resolve()
           })
+          .catch((err) => {
+            console.log(err);
+            gravarLogErro(err);
+          })// ADICIONAR NA FILA DE ERROS ==========================================
       })
     } catch (error) {
       reject(error)
@@ -117,11 +121,8 @@ async function padronziarCadastroVariante(idNuvem){
 async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO, BARRAS){
   return new Promise(async (resolve, reject) => {
     try {
-      const arquivoLidoProdutos = await fsPromises.readFile('./src/build/nuvem/produtosNuvem.json', 'utf8');
-      const arquivoLidoCategorias = await fsPromises.readFile('./src/build/nuvem/categoriaNuvem.json', 'utf8');
-
-      const dados = JSON.parse(arquivoLidoProdutos);
-      const categorias = JSON.parse(arquivoLidoCategorias)
+      const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
+      const categorias = JSON.parse(fs.readFileSync('./src/build/nuvem/categoriaNuvem.json', 'utf8'))
 
       let CATEGORIA_PRODUTO;
 
@@ -150,6 +151,7 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
               if (response.error) {
                   // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                   console.log('Erro ao cadastrar produto:', PRODUTO);
+                  gravarLogErro('Erro ao cadastrar produto: ' + PRODUTO + ' com response.error: ' + response.error);
               } else {
                   // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
                 console.log(`${PRODUTO} FOI CADASTRADO COM SUCESSO`)
@@ -172,7 +174,7 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
           .catch((err) => {
               console.log(err)
               console.log('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO);
-              gravarLogErro('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO)
+              gravarLogErro('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO + ' com erro: ' + err)
           });
         }
         else{
@@ -272,6 +274,7 @@ async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, cate
           });
       } catch(error) {
           console.error('Error in cadastrarProdutoNuvem:', error);
+          gravarLogErro('Error in cadastrarProdutoNuvem:', error)
           // Trate o erro sem rejeitar a Promessa principal.
           resolve({ error: true });
       }
@@ -357,8 +360,32 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                     resolve()
                   })
                 })
-                .catch((error) => {
-                    console.log(error.response.data);
+                .catch(async (error) => {
+                 
+                    if(error.response.data.message == 'Not Found'){
+                      await deletarVariacoesDoArquivo(ID_PRODUTO)
+                      .then(() => {
+                        delete dados.produtos[ID_PRODUTO]
+                        fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+                      })
+                      .then(() => {
+                        console.log(`O PRODUTO DE ID ${ID_PRODUTO} NAO FOI ENCONTRADO NO ID NUVEM ${idNuvem}, PRODUTO DELETADO PARA RE-CADASTRO`);
+                        gravarLog(`O PRODUTO DE ID ${ID_PRODUTO} NAO FOI ENCONTRADO NO ID NUVEM ${idNuvem}, PRODUTO DELETADO PARA RE-CADASTRO`)
+                      })
+                      .then(async () => {
+                        await novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO, BARRAS)
+                        .then(() => {
+                          resolve();
+                        })
+                      })
+                      
+                    }
+                    else{
+                      console.log(error.response.data);
+                      gravarLogErro(error.response.data)
+                    }
+
+
                     resolve({ error: true });
                 });
               }
@@ -405,6 +432,8 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                   if (response.error) {
                       // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                       console.log('Erro ao cadastrar produto:', PRODUTO);
+                      console.log(response.error);
+                      gravarLogErro(`Erro ao cadastrar produto: ${PRODUTO} com response.error: ${response.error}`);
                   } else {
                       // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
                     console.log(`${PRODUTO} FOI CADASTRADO COM SUCESSO`)
@@ -427,7 +456,8 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
               })
               .catch((err) => {
                   console.log('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO);
-                  gravarLogErro('ERRO CODE 2: Erro ao cadastrar o produto de ID: ' + ID_PRODUTO)
+                  gravarLogErro('ERRO CODE 2: Erro ao cadastrar o produto de ID: ' + ID_PRODUTO + ' com error: ' + err);
+                  console.log(err)
               });
             }
             else{
@@ -757,7 +787,7 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
 
         if (!categoriasjson.categorias[ID_GRUPO]) {
             console.log(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`)
-            gravarLogErro(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`);
+            gravarLog(`SUBCATEGORIA ${SUBGRUPO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO SEU RESPECTIVO GRUPO`);
         
         } else {
             try {
@@ -1006,13 +1036,20 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               gravarLog(`VARIACAO ALTERADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`)
               resolve()
             })
+            .catch(err => {
+              gravarLog(err)
+              console.log(err)
+              resolve()
+            })
           })
-          .catch((err) => {
-            reject(err);
+          .catch(err => {
+            console.log(`ERRO AO ATUALIZAR VARIACAO ${idVariacao}`);;
+            gravarLogErro(`ERRO AO ATUALIZAR VARIACAO ${idVariacao} com error: ${err}`)
           })
   
-      } catch (error) {
-        reject(error)
+      } catch(error) {
+        console.log('ULTIMO CATCH >>> ' + error);
+        gravarLogErro('ULTIMO CATCH >>> ' + error);
       }
     })
   }
