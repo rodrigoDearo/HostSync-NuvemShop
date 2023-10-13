@@ -1,6 +1,12 @@
 // Importar a biblioteca node-firebird
 const Firebird = require('node-firebird');
+const readline = require('readline')
 
+// Configuração do  readline
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 // Configuração do banco de dados
 const config = {
     "host": 'localhost',
@@ -28,5 +34,9 @@ Firebird.attach(config, function (err, db) {
     } else {
       console.log('Conexão fechada com sucesso.');
     }
+    
+    rl.question('Pressione "Enter" para fechar este módulo ', {
+
+    });
   });
 });
