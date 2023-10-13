@@ -34,6 +34,53 @@ async function gerarAccessToken(){
 //   ####     #### ##   #####   #####     #####    ####     #####    #####
 
 
+async function tratativaDeImagens(FOTO, ID_PRODUTO, store_id, config, response){
+  const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
+
+  if(FOTO!=null){
+    retornaCampo('caminho_imagens')
+    .then(responseCaminho => {
+      cadastroImagem(FOTO, responseCaminho, ID_PRODUTO, store_id, config, response)
+      .then(dataEnvio => {
+        if(dataEnvio != "deleteImrpovisadoIMG"){
+          if(dados.produtos[`${ID_PRODUTO}`].img_id==""){
+            axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images`, dataEnvio, config)
+            .then(response => {
+              dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
+              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+            })
+          }
+          else{
+            let imagem = dados.produtos[`${ID_PRODUTO}`].img_id;
+            dataEnvio.id = imagem;
+            axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images/${imagem}`, dataEnvio, config)
+            .then(response => {
+              dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
+              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+            })
+            .catch(err => {
+              console.log('ERRO CODE 1747');
+              gravarLogErro('ERRO CODE 1747: ' + err);
+              resolve()
+            })
+          }
+        }
+      })
+    })
+    .catch(() => { 
+      reject()
+    })
+  }
+  else{ // DELETE IMG
+    if(dados.produtos[`${ID_PRODUTO}`].img_id != ""){
+      dados.produtos[`${ID_PRODUTO}`].img_id = "";
+      fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+    }
+  }
+}
+
+
+
 /**
  * ESSA FUNÇÃO SERVE PARA LER E CRIPTOGRAFAR EM BASE 64 A IMAGEM E DEVOLVELA CODIFICADA
  * @param {*} img O NOME DA IMAGEM NO CAMINHO INFORMADO
@@ -196,25 +243,13 @@ async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
       }
       else{
         if(STATUS=='ATIVO'){
-          await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS)
+          await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS, ID_PRODUTO)
           .then(async (response) => {
               if (response.error) {
                   // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                   console.log('Erro ao cadastrar produto:', PRODUTO);
-                  gravarLogErro('Erro ao cadastrar produto: ' + PRODUTO + ' com response.error: ' + response.error);
+                  gravarLogErro('Erro ao cadastrar produto: ' + PRODUTO + ' com response: ' + response);
               } else {
-                  // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
-                console.log(`${PRODUTO} FOI CADASTRADO COM SUCESSO`)
-                dados.produtos[ID_PRODUTO] = {
-                  "id": response.id,
-                  "img_id": "",
-                  "variantePrimal": response.variants[0].id,
-                  "variantes": {
-
-                  }
-                }
-                
-                fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
                 await padronziarCadastroVariante(response.id)
                 .then(() => {
                   resolve()
@@ -310,16 +345,30 @@ async function definirRequisicaoCadastroProduto(nome, estoque, preco, descricao,
  * @param {*} categoria DO PRODUTO
  * @param {*} codigoBarras DO PRODUTO
  */
-async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, categoria, codigoBarras){
+async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, categoria, codigoBarras, idProdutoHost){
   return new Promise(async (resolve, reject) => {
       try {
+          const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
           await definirRequisicaoCadastroProduto(nome, estoque, preco, descricao, categoria, codigoBarras);
 
           axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, data, config)
-          .then((response) => {
-              resolve(response.data);
+          .then(async (response) => {
+              console.log(`${nome} FOI CADASTRADO COM SUCESSO`)
+              dados.produtos[idProdutoHost] = {
+                  "id": response.data.id,
+                  "img_id": "",
+                  "variantePrimal": response.data.variants[0].id,
+                  "variantes": {
+                }
+              }     
+              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+            
+              await tratativaDeImagens(foto, idProdutoHost, store_id, config, response)
+              .then(() => {
+                resolve(response.data);
+              })
           })
-          .catch((error) => {
+          .catch( ()=> {
               resolve({ error: true });
           });
       } catch(error) {
@@ -364,48 +413,8 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                 let idNuvem = dados.produtos[ID_PRODUTO].id;
                 axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}`, data, config)
                 .then(async (response) => {
-
                   console.log(`${PRODUTO} FOI ATUALIZADO COM SUCESSO`)
-                  if(FOTO!=null){
-                    retornaCampo('caminho_imagens')
-                    .then(responseCaminho => {
-                      cadastroImagem(FOTO, responseCaminho, ID_PRODUTO, store_id, config, response)
-                      .then(dataEnvio => {
-                        if(dataEnvio != "deleteImrpovisadoIMG"){
-                          if(dados.produtos[`${ID_PRODUTO}`].img_id==""){
-                            axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images`, dataEnvio, config)
-                            .then(response => {
-                              dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
-                              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-                            })
-                          }
-                          else{
-                            let imagem = dados.produtos[`${ID_PRODUTO}`].img_id;
-                            dataEnvio.id = imagem;
-                            axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${response.data.id}/images/${imagem}`, dataEnvio, config)
-                            .then(response => {
-                              dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
-                              fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-                            })
-                            .catch(err => {
-                              console.log('ERRO CODE 1747');
-                              gravarLogErro('ERRO CODE 1747: ' + err);
-                              resolve()
-                            })
-                          }
-                        }
-                      })
-                    })
-                    .catch(() => { 
-                      reject()
-                    })
-                  }
-                  else{ // DELETE IMG
-                    if(dados.produtos[`${ID_PRODUTO}`].img_id != ""){
-                      dados.produtos[`${ID_PRODUTO}`].img_id = "";
-                      fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
-                    }
-                  }
+                  await tratativaDeImagens(FOTO, ID_PRODUTO, store_id, config, response)
                 })
                 .then(async () => {
                   await definirAtualizacaoEstoqueEpreco(ESTOQUE, VALOR_VENDA)
@@ -505,36 +514,24 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
           }
           else{
             if((STATUS=='ATIVO')&&(ESTOQUE>0)){
-              await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS)
+              await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS, ID_PRODUTO)
               .then(async response => {
                   if (response.error) {
                       console.log('Erro ao cadastrar produto:', PRODUTO);
-                      console.log(response.error);
-                      gravarLogErro(`Erro ao cadastrar produto: ${PRODUTO} com response.error: ${response.error}`);
-                  } else {
-                      // [...] CADASTRO BEM SUCEDIDO NA PLATAFORMA
-                    console.log(`${PRODUTO} FOI CADASTRADO COM SUCESSO`)
-                    dados.produtos[ID_PRODUTO] = {
-                      "id": response.id,
-                      "img_id": "",
-                      "variantePrimal": response.variants[0].id,
-                      "variantes": {
-    
-                      }
-                    }
-                    
-                    fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
+                      console.log(response);
+                      gravarLogErro(`Erro ao cadastrar produto: ${PRODUTO} com response: ${response}`);
+                  } else {          
                     await padronziarCadastroVariante(response.id)
-                    .then(() => {
+                    .then(async () => {
                       resolve()
                     })
                   }
-                resolve()
               })
               .catch((err) => {
                   console.log('Erro ao cadastrar o produto de ID: ' + ID_PRODUTO);
                   gravarLogErro('ERRO CODE 2: Erro ao cadastrar o produto de ID: ' + ID_PRODUTO + ' com error: ' + err);
                   console.log(err)
+                  resolve()
               });
             }
             else{
