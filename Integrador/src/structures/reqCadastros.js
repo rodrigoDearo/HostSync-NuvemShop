@@ -84,7 +84,7 @@ function esqueletoDoSistema(){
         console.log('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
         gravarLogErro('Erro ao criar/verificar as dependências SQL necessárias no banco FDB. Consultar o desenvolvedor do sistema com URGÊNCIA');
       })
-  })/*
+  })
   .then(async () => {
     await sincronizacaoInicialGrades();
   })
@@ -93,7 +93,7 @@ function esqueletoDoSistema(){
   })
   .then(async () => {
     await sincronizacaoInicialSubGrupo();
-  })
+  })/*
   .then(async () => {
     await sincronizacaoInicialProdutos();
   })
@@ -514,9 +514,9 @@ async function sincronizacaoInicialVariantes() {
                 console.log('PRODUTO JA POSSUI ESTA VARIACAO')
               }
               else{
-                if(ESTOQUE<=0){
+                if(ESTOQUE<Proje0){
                   console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR ZERADO OU NEGATIVADO`)
-                  gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR ZERADO OU NEGATIVADO`)
+                  gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR ZERADO OU NEGATIVADO`)
                 }
                 else{
                   await retornaPrecoId(ID_PRODUTO)
@@ -532,7 +532,7 @@ async function sincronizacaoInicialVariantes() {
             }
             else{
               console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
-              gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
+              gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
             }
           }
 
@@ -922,7 +922,7 @@ function novoCadastroVariacao(idVariacao){
               else{
                 if(ESTOQUE<0){
                   console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
-                  gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
+                  gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
                 }
                 else{
                   await retornaPrecoId(ID_PRODUTO)
@@ -979,7 +979,7 @@ async function sincronizarVariacaoIDespecifico(id){
               if(!(grades[ID_GRADE].PRODUTOS[ID_PRODUTO])){
                 if(ESTOQUE<0){
                   console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
-                  gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
+                  gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
                 }
                 else{
                   await retornaPrecoId(ID_PRODUTO)
@@ -994,13 +994,12 @@ async function sincronizarVariacaoIDespecifico(id){
               } 
               else{
                 let varianteId = grades[ID_GRADE].PRODUTOS[ID_PRODUTO]
-                console.log(variantesId);
                 await novaAlteracaoVariacao(varianteId)
               }
             }
             else{
                 console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
-                gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
+                gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
             }
           }
 
@@ -1042,7 +1041,7 @@ async function novaAlteracaoVariacao(idVariacao){
               if(grades[ID_GRADE].PRODUTOS[ID_PRODUTO]){
                 if(ESTOQUE<0){
                   console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI ALTERADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
-                  gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI ALTERADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
+                  gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI ALTERADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
                 }
                 else{
                   retornaPrecoId(ID_PRODUTO)
@@ -1057,7 +1056,7 @@ async function novaAlteracaoVariacao(idVariacao){
             }
             else{
               console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI ALTERADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
-              gravarLogErro(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI ALTERADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
+              gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI ALTERADA DEVIDO A AUSÊNCIA DO PRODUTO OU GRADE `)
             }
             fs.writeFileSync('./src/build/nuvem/grades.json', JSON.stringify(grades, null, 2));
           }
@@ -1115,6 +1114,12 @@ async function novoDelete(idVariacaoHost){
       const dados = JSON.parse(fs.readFileSync('./src/build/nuvem/produtosNuvem.json', 'utf8'));
       
       const dadosProdutos = encontrarInformacoesVariacao(dados, idVariacaoHost);
+      if(dadosProdutos==null){
+        console.log('ERRO REQCADASTRO CODE 1649');
+        gravarLogErro('ERRO REQCADASTRO CODE 1649')
+        resolve()
+      }
+
       let idProdutoNuvem = dadosProdutos.idProdutoNuvem;
       let idDaVarianteNuvem = dadosProdutos.idVariacaoNuvem;
       let idProdutoHost = dadosProdutos.idProdutoHost;
