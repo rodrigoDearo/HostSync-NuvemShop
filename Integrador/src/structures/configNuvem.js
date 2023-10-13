@@ -63,6 +63,11 @@ async function cadastroImagem(img, caminho, ID_PRODUTO, store_id, config, respon
           fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
           resolve('deleteImrpovisadoIMG');
         })
+        .catch(err => {
+          console.log(err);
+          gravarLogErro(err);
+          resolve();
+        })
       }
     } 
     
@@ -105,13 +110,16 @@ async function padronziarCadastroVariante(idNuvem){
           .then(() => {
             resolve()
           })
-          .catch((err) => {
-            console.log(err);
-            gravarLogErro(err);
+          .catch(err => {
+            console.log('ERRO CODE 1749');
+            gravarLogErro('ERRO CODE 1749: ' + err);
+            resolve()
           })// ADICIONAR NA FILA DE ERROS ==========================================
       })
     } catch (error) {
-      reject(error)
+      console.log('ERRO CODE 1750');
+      gravarLogErro('ERRO CODE 1750: ' + error);
+      resolve()
     }
   })
 }
@@ -337,6 +345,11 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                               dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
                               fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
                             })
+                            .catch(err => {
+                              console.log('ERRO CODE 1747');
+                              gravarLogErro('ERRO CODE 1747: ' + err);
+                              resolve()
+                            })
                           }
                         }
                       })
@@ -357,6 +370,11 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                   
                   axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}/variants/${idVariante}`, data, config)
                   .then(() => {
+                    resolve()
+                  })
+                  .catch(err => {
+                    console.log('ERRO CODE 1746');
+                    gravarLogErro('ERRO CODE 1746: ' + err);
                     resolve()
                   })
                 })
@@ -414,13 +432,28 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                     .then(() => {
                       delete dados.produtos[ID_PRODUTO]
                     })
+                    .catch(err => {
+                      console.log('ERRO CODE 2209');
+                      gravarLogErro('ERRO CODE 2209: ' + err);
+                      resolve();
+                    })
 
                     fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
                     console.log(`${PRODUTO} FOI DELETADO COM SUCESSO`);
                   })
+                  .catch(err => {
+                    console.log('ERRO CODE 2209');
+                    gravarLogErro('ERRO CODE 2209: ' + err);
+                    resolve();
+                  })
                 })
                 .then(() => {
                   resolve()
+                })
+                .catch(err => {
+                  console.log('ERRO CODE 2209');
+                  gravarLogErro('ERRO CODE 2209: ' + err);
+                  resolve();
                 })
                 
               }        
@@ -468,7 +501,9 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
           }
   
         } catch (error) {
-            reject(error)
+            console.log('ERRO CODE 1536');
+            gravarLogErro('ERRO CODE 1536 ' + error);
+            resolve();
         }
       })
 }
@@ -703,14 +738,23 @@ async function alterarCategoriaNuvem(idHost, novoNome){
           categoriasjson.categorias[idHost]['nome'] = novoNome;
           fs.writeFileSync('./src/build/nuvem/categoriaNuvem.json', JSON.stringify(categoriasjson, null, 2));
         })
+        .catch(err => {
+          gravarLogErro('ERRO CODE 1741 ' + err)
+          console.log('ERRO CODE 1741')
+          resolve()
+        })
       })
-      .catch(() => {
-        reject(error);
+      .catch(err => {
+        gravarLogErro('ERRO CODE 1742 ' + err)
+        console.log('ERRO CODE 1742')
+        resolve()
       })
 
       resolve()
     } catch (error) {
-      reject(error)
+      gravarLogErro('ERRO CODE 1743 ' + error)
+      console.log('ERRO CODE 1743')
+      resolve()
     }
   })
 }
@@ -745,13 +789,22 @@ async function deletarCategoriaNuvem(idNuvem){
           
           resolve();
         })
+        .catch(err => {
+          console.log('ERRO CODE 1543');
+          gravarLogErro('ERRO CODE 1543: ' + err);
+          resolve();
+        })
       })
-      .catch(() => {
-        reject(error);
+      .catch(err => {
+        console.log('ERRO CODE 1537');
+        gravarLogErro('ERRO CODE 1537: ' + err)
+        resolve()
       })
 
     } catch (error) {
-      reject(error)
+      console.log('ERRO CODE 1509');
+      gravarLogErro('ERRO CODE 1509: ' + error)
+      resolve()
     }
   })
 }
@@ -903,14 +956,23 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
             console.log(`SUBCATEGORIA ${novoNome} ALTERADA COM SUCESSO`);
             gravarLog(`SUBCATEGORIA ${novoNome} ALTERADA COM SUCESSO`)
           })
+          .catch(err => {
+            gravarLogErro('ERRO CODE 1739 ' + err)
+            console.log('ERRO CODE 1739')
+            resolve()
+          })
         })
-        .catch(() => {
-          reject(error);
+        .catch(err => {
+          gravarLogErro('ERRO CODE 1738 ' + err)
+          console.log('ERRO CODE 1738')
+          resolve()
         })
   
         resolve()
       } catch (error) {
-        reject(error)
+        gravarLogErro('ERRO CODE 1740 ' + error)
+        console.log('ERRO CODE 1740')
+        resolve()
       }
     })
   }
@@ -931,7 +993,7 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
   //     ###    ######    ## ##     ##     ######   ##       ######   ##   ##    ##     ##  ###   ## ##   ######    ##  ##   ## #
   //     ###    ##  ##    ##  ##    ##     ##  ##    ##  ##  ##  ##   ##   ##   ##       ##  ##   ##  ##  ##  ##    ## ##    ##   #
   //      #     ##  ##   #### ##   ####    ##  ##     ####   ##  ##    #####   ##         #####  #### ##  ##  ##   #####    #######
-
+     // 
 
   async function tratativaDeVariacaoNuvem(id, nome, idProduto, idHost, estoque, preco){
     return new Promise(async (resolve, reject) => {
@@ -944,8 +1006,15 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
           fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados, null, 2));
           resolve(response.id)
         })
+        .catch(err => {
+          console.log('ERRO CODE 1755')
+          gravarLogErro('ERRO CODE 1755: ' + err)
+          resolve()
+        })
       } catch (error) {
-        reject(error)
+        console.log('ERRO CODE 1755')
+        gravarLogErro('ERRO CODE 1755: ' + error)
+        resolve()
       }
     })
   }
@@ -990,13 +1059,22 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               gravarLog(`VARIACAO ${nome} CRIADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`)
               resolve(response.data)
             })
+            .catch(erro => {
+              console.log('ERRO CODE 1736')
+              gravarLogErro('ERRO CODE 1736' + erro);
+              resolve()
+            })
           })
           .catch((err) => {
-            reject(err);
+            console.log(err)
+            gravarLogErro(err);
+            resolve()
           })
   
       } catch (error) {
-        reject(error)
+        console.log(error);
+        gravarLogErro(error);
+        resolve()
       }
     })
   }
@@ -1037,19 +1115,21 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               resolve()
             })
             .catch(err => {
-              gravarLog(err)
-              console.log(err)
+              gravarLogErro('ERRO CODE 1737 ' + err)
+              console.log('ERRO CODE 1737')
               resolve()
             })
           })
           .catch(err => {
             console.log(`ERRO AO ATUALIZAR VARIACAO ${idVariacao}`);;
             gravarLogErro(`ERRO AO ATUALIZAR VARIACAO ${idVariacao} com error: ${err}`)
+            resolve()
           })
   
       } catch(error) {
         console.log('ULTIMO CATCH >>> ' + error);
         gravarLogErro('ULTIMO CATCH >>> ' + error);
+        resolve()
       }
     })
   }
@@ -1085,11 +1165,15 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
             })
           })
           .catch((err) => {
-            reject(err);
+            console.log(err);
+            gravarLogErro(err);
+            resolve()
           })
   
       } catch (error) {
-        reject(error)
+        console.log(error);
+        gravarLogErro(error);
+        resolve()
       }
     })
   }
@@ -1111,7 +1195,9 @@ async function deletarVariacoesDoArquivo(id){
       fs.writeFileSync('./src/build/nuvem/grades.json', JSON.stringify(grades));
       resolve()
     } catch (error) {
-      reject(error)
+      console.log('ERRO CODE 1538');
+      gravarLogErro('ERRO CODE 1538: ' + err);
+      resolve();
     }
 
 
