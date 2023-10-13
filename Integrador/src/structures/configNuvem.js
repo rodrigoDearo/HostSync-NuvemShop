@@ -508,7 +508,6 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
               await cadastrarProdutoNuvem(PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, CARACTERISTICA, CATEGORIA_PRODUTO, BARRAS)
               .then(async response => {
                   if (response.error) {
-                      // [...] CASO OCORRA ISTO DEVERÁ ABRIR O POP UP POSTERIORMENTE
                       console.log('Erro ao cadastrar produto:', PRODUTO);
                       console.log(response.error);
                       gravarLogErro(`Erro ao cadastrar produto: ${PRODUTO} com response.error: ${response.error}`);

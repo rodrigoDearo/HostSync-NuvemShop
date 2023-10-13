@@ -93,13 +93,13 @@ function esqueletoDoSistema(){
   })
   .then(async () => {
     await sincronizacaoInicialSubGrupo();
-  })/*
+  })
   .then(async () => {
     await sincronizacaoInicialProdutos();
   })
   .then(async () => { 
     await sincronizacaoInicialVariantes();
-  })*/
+  })
   .then(async () => {
     hello();
     await sincronizarBanco();
@@ -265,7 +265,6 @@ async function sincronizarBanco(){
         });
       } else {
         console.log('Nenhum registro encontrado para leitura.');
-        gravarLog('Nenhum registro encontrado para leitura.');
         db.detach(function (err) {
           if (err){
             console.log(err);
@@ -513,7 +512,7 @@ async function sincronizacaoInicialVariantes() {
                 console.log('PRODUTO JA POSSUI ESTA VARIACAO')
               }
               else{
-                if(ESTOQUE<Proje0){
+                if(ESTOQUE<1){
                   console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR ZERADO OU NEGATIVADO`)
                   gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR ZERADO OU NEGATIVADO`)
                 }
@@ -976,7 +975,7 @@ async function sincronizarVariacaoIDespecifico(id){
               let nomeGrade = grades[ID_GRADE]['NOME'];
 
               if(!(grades[ID_GRADE].PRODUTOS[ID_PRODUTO])){
-                if(ESTOQUE<0){
+                if(ESTOQUE<1){
                   console.log(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
                   gravarLog(`A VARIAÇÃO DE ID ${ID_GRADE} DO PRODUTO DE ID ${ID_PRODUTO} NÃO FOI CADASTRADA DEVIDO AO ESTOQUE ESTAR NEGATIVADO`)
                 }
