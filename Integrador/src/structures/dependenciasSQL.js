@@ -51,6 +51,53 @@ async function criarGeneratorID(config){
 }
 
 
+
+/**
+ * ESSA FUNÇÃO CRIA EM CASO DE AUSÊNCIA, UM GERADOR DE ID A SER USADO NA TABELA NOTIFICACOES_HOSTSYNC
+ * @param {*} config 
+ * @returns 
+ */
+async function criarGeneratorID(config){
+  return new Promise(async (resolve, reject) => {
+    try {
+      
+      conexao.attach(config, function (err, db){
+        if(err)
+          throw err
+
+        let codigo = `EXECUTE BLOCK
+        AS
+        BEGIN
+            IF (NOT EXISTS (
+                SELECT 1
+                FROM RDB$GENERATORS
+                WHERE RDB$GENERATOR_NAME = 'GEN_NOTIFICACOES_HOSTSYNC_ID'
+            ))
+            THEN
+            BEGIN
+                EXECUTE STATEMENT 'CREATE SEQUENCE GEN_NOTIFICACOES_HOSTSYNC_ID';
+            END
+        END
+        `;
+
+        db.query(codigo, function (err, result){
+          if (err)
+            throw err;
+
+          console.log('GERADOR DE ID GEN_NOTIFICACOES_HOSTSYNC_ID FOI CRIADA EM CASO DE AUSÊNCIA');
+          resolve();
+        })
+
+        db.detach();
+      })
+
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
 /**
  * FUNÇÃO RESPONSÁVEL POR CRIAR CASO NÃO EXISTA A TABELA NOTIFICACOES_HOSTSYNC
  * @param {config} config se trata do JSON com as configurações para se conectar com o banco de dados 

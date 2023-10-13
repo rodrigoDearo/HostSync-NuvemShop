@@ -126,6 +126,48 @@ async function padronziarCadastroVariante(idNuvem){
 
 
 
+async function padronziarCadastroVariante(idNuvem){
+  return new Promise (async (resolve, reject) => {
+    try {
+      await retornaCampo('app_token')
+      .then(response => {
+          config = {
+              headers: {
+                Authentication: `bearer ${response}`,
+                'User-Agent': `HostSync (7752)`,
+                'Content-Type': 'application/json'
+              },
+            };
+      })
+      .then(async () => {
+          await retornaCampo('store_id')
+          .then(response => {
+              store_id = response;
+          })
+      })
+      .then(() => {
+          data = {
+          attributes: [
+            {
+              pt: "Variantes"
+            }
+          ]
+        }
+      })
+      .then(() => {
+          axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}`, data, config)
+          .then(() => {
+            resolve()
+          })
+      })
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+
+
 async function tratativaDeProdutosNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, FOTO, STATUS, CARACTERISTICA, GRUPO, SUBGRUPO, BARRAS){
   return new Promise(async (resolve, reject) => {
     try {
@@ -454,6 +496,9 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                   console.log('ERRO CODE 2209');
                   gravarLogErro('ERRO CODE 2209: ' + err);
                   resolve();
+                })
+                .then(() => {
+                  resolve()
                 })
                 
               }        
