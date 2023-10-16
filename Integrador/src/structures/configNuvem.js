@@ -49,6 +49,9 @@ async function tratativaDeImagens(FOTO, ID_PRODUTO, store_id, config, response){
               dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
               fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
             })
+            .catch(async () => {
+              await gravarErroDeRequisicao(response.data.id, 'produtos', 'CADASTRAR IMAGEM');
+            })
           }
           else{
             let imagem = dados.produtos[`${ID_PRODUTO}`].img_id;
@@ -58,10 +61,10 @@ async function tratativaDeImagens(FOTO, ID_PRODUTO, store_id, config, response){
               dados.produtos[`${ID_PRODUTO}`].img_id = response.data.id
               fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
             })
-            .catch(err => {
+            .catch(async (err) => {
+              await gravarErroDeRequisicao(response.data.id, 'produtos', 'ATUALIZAR IMAGEM');
               console.log('ERRO CODE 1747');
               gravarLogErro('ERRO CODE 1747: ' + err);
-              resolve()
             })
           }
         }
@@ -110,7 +113,8 @@ async function cadastroImagem(img, caminho, ID_PRODUTO, store_id, config, respon
           fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
           resolve('deleteImrpovisadoIMG');
         })
-        .catch(err => {
+        .catch(async (err) => {
+          await gravarErroDeRequisicao(response.data.id, 'produtos', 'DELETAR IMAGEM');
           console.log(err);
           gravarLogErro(err);
           resolve();
@@ -157,7 +161,8 @@ async function padronziarCadastroVariante(idNuvem){
           .then(() => {
             resolve()
           })
-          .catch(err => {
+          .catch(async (err) => {
+            await gravarErroDeRequisicao(idNuvem, 'produtos', 'ATUALIZAR PRODUTO');
             console.log('ERRO CODE 1749');
             gravarLogErro('ERRO CODE 1749: ' + err);
             resolve()
@@ -205,6 +210,9 @@ async function padronziarCadastroVariante(idNuvem){
           axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idNuvem}`, data, config)
           .then(() => {
             resolve()
+          })
+          .catch(async () => {
+            await gravarErroDeRequisicao(idNuvem, 'produtos', 'ATUALIZAR PRODUTO');
           })
       })
     } catch (error) {
@@ -368,7 +376,8 @@ async function cadastrarProdutoNuvem(nome, estoque, preco, foto, descricao, cate
                 resolve(response.data);
               })
           })
-          .catch( ()=> {
+          .catch(async ()=> {
+              await gravarErroDeRequisicao(0, 'produtos', 'CADASTRAR PRODUTO');
               resolve({ error: true });
           });
       } catch(error) {
@@ -430,7 +439,7 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                   })
                 })
                 .catch(async (error) => {
-                 
+
                     if(error.response.data.message == 'Not Found'){
                       await deletarVariacoesDoArquivo(ID_PRODUTO)
                       .then(() => {
@@ -492,7 +501,8 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                     fs.writeFileSync('./src/build/nuvem/produtosNuvem.json', JSON.stringify(dados));
                     console.log(`${PRODUTO} FOI DELETADO COM SUCESSO`);
                   })
-                  .catch(err => {
+                  .catch(async (err) => {
+                    await gravarErroDeRequisicao(idNuvem, 'produtos', 'DELETAR PRODUTO');
                     console.log('ERRO CODE 2209');
                     gravarLogErro('ERRO CODE 2209: ' + err);
                     resolve();
@@ -730,8 +740,9 @@ async function cadastrarCategoriaNuvem(nome){
             reject();
           })
         })
-        .catch(() => {
-          reject(error);
+        .catch(async () => {
+          await gravarErroDeRequisicao(0, 'categoria', 'CADASTRAR CATEGORIA');
+          resolve({error: true});
         })
 
     } catch (error) {
@@ -779,7 +790,8 @@ async function alterarCategoriaNuvem(idHost, novoNome){
           categoriasjson.categorias[idHost]['nome'] = novoNome;
           fs.writeFileSync('./src/build/nuvem/categoriaNuvem.json', JSON.stringify(categoriasjson, null, 2));
         })
-        .catch(err => {
+        .catch(async (err) => {
+          await gravarErroDeRequisicao(idNuvem, 'categoria', 'ATUALIZAR CATEGORIA');
           gravarLogErro('ERRO CODE 1741 ' + err)
           console.log('ERRO CODE 1741')
           resolve()
@@ -830,7 +842,8 @@ async function deletarCategoriaNuvem(idNuvem){
           
           resolve();
         })
-        .catch(err => {
+        .catch(async (err) => {
+          await gravarErroDeRequisicao(idNuvem, 'categoria', 'DELETAR CATEGORIA');
           console.log('ERRO CODE 1543');
           gravarLogErro('ERRO CODE 1543: ' + err);
           resolve();
@@ -950,6 +963,9 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               gravarLog(`SUBCATEGORIA ${nome} CRIADA COM SUCESSO`)
               resolve(response.data)
             })
+            .catch(async () => {
+              await gravarErroDeRequisicao(0, 'categoria', 'CADASTRAR CATEGORIA');
+            })
           })
           .catch(() => {
             reject(error);
@@ -997,7 +1013,8 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
             console.log(`SUBCATEGORIA ${novoNome} ALTERADA COM SUCESSO`);
             gravarLog(`SUBCATEGORIA ${novoNome} ALTERADA COM SUCESSO`)
           })
-          .catch(err => {
+          .catch(async (err) => {
+            await gravarErroDeRequisicao(idNuvem, 'categoria', 'ATUALIZAR CATEGORIA');
             gravarLogErro('ERRO CODE 1739 ' + err)
             console.log('ERRO CODE 1739')
             resolve()
@@ -1100,7 +1117,8 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               gravarLog(`VARIACAO ${nome} CRIADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`)
               resolve(response.data)
             })
-            .catch(erro => {
+            .catch(async (erro) => {
+              await gravarErroDeRequisicao(id_produto, 'produtos', 'CADASTRAR VARIACAO');
               console.log('ERRO CODE 1736')
               gravarLogErro('ERRO CODE 1736' + erro);
               resolve()
@@ -1155,7 +1173,8 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               gravarLog(`VARIACAO ALTERADA COM SUCESSO NO PRODUTO DE ID ${id_produto}`)
               resolve()
             })
-            .catch(err => {
+            .catch(async (err) => {
+              await gravarErroDeRequisicao(idVariacao, 'produtos', 'ATUALIZAR VARIACAO');
               gravarLogErro('ERRO CODE 1737 ' + err)
               console.log('ERRO CODE 1737')
               resolve()
@@ -1203,6 +1222,9 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
               console.log(`VARIACAO ${idVariacao} DELETADA COM SUCESSO NO PRODUTO DE ID ${idProduto}`);
               gravarLog(`VARIACAO ${idVariacao} DELETADA COM SUCESSO NO PRODUTO DE ID ${idProduto}`)
               resolve()
+            })
+            .catch(async () => {
+              await gravarErroDeRequisicao(idVariacao, 'produtos', 'DELETAR VARIACAO');
             })
           })
           .catch((err) => {
@@ -1304,6 +1326,28 @@ async function deletarVariacoesDoArquivo(id){
       }
     });
   }
+
+  // FUNÇÃO PARA GRAVAR NA PILHA DE ERROS DE REQUISIÇÃO
+async  function gravarErroDeRequisicao(id, modulo, tipoRequisicao){
+  return new Promise((resolve, reject) => {
+    try {
+
+      if (!fs.existsSync('../build/nuvem/pilhaErros.json')){
+        fs.mkdirSync('../build/nuvem/pilhaErros.json')
+      }
+
+      const pilhaErros = JSON.parse(fs.readFileSync('./src/build/nuvem/pilhaErros.json', 'utf8'));
+
+      pilhaErros[modulo][id] = tipoRequisicao
+
+      fs.writeFileSync('./src/build/nuvem/pilhaErros.json', JSON.stringify(grades));
+
+    } catch (error) {
+      gravarLogErro(error)
+      resolve({error: true})
+    }
+  })
+}
 
 module.exports = {
     tratativaDeProdutosNuvem,
