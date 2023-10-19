@@ -26,11 +26,12 @@ function esqueletoDoSistema(){
   })
   .then(() => {
     config = {
-      "host": 'localhost',
-      "port": 3050,
-      "database": `${caminho}/HOST.FDB`,
-      "user": 'SYSDBA',
-      "password": 'masterkey'
+      host: 'localhost',
+      port: 3050,
+      database: `${caminho}/HOST.FDB`,
+      user: 'SYSDBA',
+      password: 'masterkey',
+      charset: 'UTF8'
     };
   })
   .then(async() => {
@@ -317,6 +318,7 @@ async function sincronizacaoInicialProdutos() {
                   throw err;
 
               // ABERTURA DO ARQUIVO DE PRODUTOS
+
               for (const row of result) {
                 const { ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VENDA, DESCRICAO_COMPLEMENTAR, FOTO, STATUS, MARCA, GRUPO, SUBGRUPO, GRADE, BARRAS } = row;
   

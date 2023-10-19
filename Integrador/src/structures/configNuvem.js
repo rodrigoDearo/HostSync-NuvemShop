@@ -51,6 +51,7 @@ async function tratativaDeImagens(FOTO, ID_PRODUTO, store_id, config, response){
             })
             .catch(async () => {
               await gravarErroDeRequisicao(response.data.id, 'produtos', 'CADASTRAR IMAGEM');
+              // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, RECADASTRAR 
             })
           }
           else{
@@ -165,6 +166,7 @@ async function padronziarCadastroVariante(idNuvem){
             await gravarErroDeRequisicao(idNuvem, 'produtos', 'ATUALIZAR PRODUTO');
             console.log('ERRO CODE 1749');
             gravarLogErro('ERRO CODE 1749: ' + err);
+            // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, RECADASTRAR 
             resolve()
           })// ADICIONAR NA FILA DE ERROS ==========================================
       })
@@ -213,6 +215,7 @@ async function padronziarCadastroVariante(idNuvem){
           })
           .catch(async () => {
             await gravarErroDeRequisicao(idNuvem, 'produtos', 'ATUALIZAR PRODUTO');
+              // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, RECADASTRAR 
           })
       })
     } catch (error) {
@@ -439,7 +442,7 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                   })
                 })
                 .catch(async (error) => {
-
+                    //* ESTUDAR FUNÇÃO
                     if(error.response.data.message == 'Not Found'){
                       await deletarVariacoesDoArquivo(ID_PRODUTO)
                       .then(() => {
@@ -493,6 +496,7 @@ async function novoRegistroProdutoNuvem(ID_PRODUTO, PRODUTO, ESTOQUE, VALOR_VEND
                       delete dados.produtos[ID_PRODUTO]
                     })
                     .catch(err => {
+                      // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, SO RETIRAR DA BASE 
                       console.log('ERRO CODE 2209');
                       gravarLogErro('ERRO CODE 2209: ' + err);
                       resolve();
@@ -791,6 +795,7 @@ async function alterarCategoriaNuvem(idHost, novoNome){
           fs.writeFileSync('./src/build/nuvem/categoriaNuvem.json', JSON.stringify(categoriasjson, null, 2));
         })
         .catch(async (err) => {
+          // ! ERRO DEVIDO A CATEGORIA NAO EXISTIR, RECADASTRAR
           await gravarErroDeRequisicao(idNuvem, 'categoria', 'ATUALIZAR CATEGORIA');
           gravarLogErro('ERRO CODE 1741 ' + err)
           console.log('ERRO CODE 1741')
@@ -844,6 +849,7 @@ async function deletarCategoriaNuvem(idNuvem){
         })
         .catch(async (err) => {
           await gravarErroDeRequisicao(idNuvem, 'categoria', 'DELETAR CATEGORIA');
+          // ! ERRO DEVIDO A CATEGORIA NAO EXISTIR, SO RETIRAR DA BASE 
           console.log('ERRO CODE 1543');
           gravarLogErro('ERRO CODE 1543: ' + err);
           resolve();
@@ -1015,6 +1021,7 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
           })
           .catch(async (err) => {
             await gravarErroDeRequisicao(idNuvem, 'categoria', 'ATUALIZAR CATEGORIA');
+            // ! ERRO DEVIDO A CATEGORIA NAO EXISTIR, RECADASTRAR 
             gravarLogErro('ERRO CODE 1739 ' + err)
             console.log('ERRO CODE 1739')
             resolve()
@@ -1119,6 +1126,7 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
             })
             .catch(async (erro) => {
               await gravarErroDeRequisicao(id_produto, 'produtos', 'CADASTRAR VARIACAO');
+              // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, RECADASTRAR PRODUTO 
               console.log('ERRO CODE 1736')
               gravarLogErro('ERRO CODE 1736' + erro);
               resolve()
@@ -1175,6 +1183,7 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
             })
             .catch(async (err) => {
               await gravarErroDeRequisicao(idVariacao, 'produtos', 'ATUALIZAR VARIACAO');
+              // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, RECADASTRAR
               gravarLogErro('ERRO CODE 1737 ' + err)
               console.log('ERRO CODE 1737')
               resolve()
@@ -1225,6 +1234,7 @@ async function tratativaDeSubCategoriasNuvem(ID, ID_GRUPO, SUBGRUPO){
             })
             .catch(async () => {
               await gravarErroDeRequisicao(idVariacao, 'produtos', 'DELETAR VARIACAO');
+              // ! ERRO DEVIDO AO PRODUTO NAO EXISTIR, RECADASTRAR
             })
           })
           .catch((err) => {
@@ -1361,3 +1371,9 @@ module.exports = {
     atualizarVariacao,
     deletarVariacao
 }
+
+
+// ! NÃO É POSSIVEL VARIANTE SE DELETAR, APENAS PRODUTOS
+// ! A CATEGORIA PODE NAO SER ENCONTRADA AO CADASTRAR OU ATUALIZAR UM PRODUTO
+// ! DAR PREFERENCIA APENAS PARA CADASTRO E ATUALIZACAO DE PRODUTOS
+
