@@ -1,0 +1,10 @@
+{
+  "host": {
+    "pathdb": "C:/TSD/Host"
+  },
+  "pedidoOk": {
+    "token": "",
+    "idRequestPost": 0,
+    "last_request": "2000-01-01T12:00:00"
+  }
+}
