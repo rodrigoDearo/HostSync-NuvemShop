@@ -16,8 +16,12 @@ function returnInfo(infoRequired){
                 resolve(process.env.PSW_DATABASE) 
                 break;
 
-            case 'token_partner':
-                resolve(process.env.TOKEN_PARTNER) 
+            case 'client_id':
+                resolve(process.env.CLIENT_ID) 
+                break;
+            
+            case 'client_secret':
+                resolve(process.env.CLIENT_SECRET) 
                 break;
         }
     })

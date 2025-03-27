@@ -23,8 +23,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "HostSync.PedidoOk.app",
-    "productName": "HostSync-PedOk",
+    "appId": "HostSync.NuvemShop.app",
+    "productName": "HostSync-NuvemShop",
     "copyright": "© 2024 Rodrigo Dearo",
     "directories": {
       "output": "dist"

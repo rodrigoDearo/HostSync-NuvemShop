@@ -26,6 +26,10 @@ async function saveInfos(systemSave, infos) {
         case 'nuvemshop':
           dadosApp.nuvemshop.code = infos;
           break;
+
+        case 'access_token_nuvem':
+          dadosApp.nuvemshop.access_token = infos;
+          break;
       }
 
       let novoJson = JSON.stringify(dadosApp, null, 2);
@@ -54,6 +58,10 @@ async function returnValueFromJson(campo){
 
           case 'codenuvemshop':
             resolve(dados.nuvemshop.code);
+            break;
+          
+          case 'codenuvemshop':
+            resolve(dados.nuvemshop.access_token);
             break;
 
         }

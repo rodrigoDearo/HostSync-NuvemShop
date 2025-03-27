@@ -52,7 +52,7 @@ app.whenReady().then(() => {
   ])
   
   tray.setContextMenu(contextMenu)
-  tray.setToolTip('Hostsync - PedOk')
+  tray.setToolTip('Hostsync - NuvemShop')
 })
 
 
@@ -149,3 +149,11 @@ async function mainProcess(){
     })
   })
 }
+
+
+/**
+ * VERIFICAR SE ESTA VAZIO, SE SIM GERAR ACCESS_TOKEN
+ * VERIFICAR CATEGORIA POR CATEGORIA
+ * VERIFICAR PRODUTO POR PRODUTO
+ * VERIFICAR VARIAÇÃO POR VARIAÇÃO
+ */
