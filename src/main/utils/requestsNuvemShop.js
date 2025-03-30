@@ -198,39 +198,38 @@ function uploadImage(url, access_token, body, idProductTray, idProductHost){
 // ---------------------------------------------------------------------
 
 
-function generateToken(url, body){
+function generateToken(body){
     return new Promise(async (resolve, reject) => {
-        await axios.post(`${url}/auth`, body)
+        let success;
+
+        await axios.post('https://www.nuvemshop.com.br/apps/authorize/token', body, {
+            'User-Agent': `HostSync (${body.client_id})`, 
+            'Content-Type': 'application/json'
+          })
         .then(async (answer) => {
+           if(answer.data.access_token){
+            success = true
             await succesHandlingRequests('token', 'post', null, null, [
                 answer.data.access_token,
-                answer.data.refresh_token
+                answer.data.user_id,
+                body.code
             ])
+           }
+           else{
+            success = false
+            await errorHandlingRequest('token', 'POST', 1, 1, answer.data.error_description, body.code)
+           }
+           
         })
-        .catch(async (error) => {
-            await errorHandlingRequest('token', 'POST', 1, 1, error.response.data.causes, body)
+        .catch(async () => {
+            resolve(false)
         })
         .finally(() => {
-            resolve()
+            resolve(success)
         })    
     })
 }
 
-
-function updateToken(url, refresh_token){
-    return new Promise(async (resolve, reject) => {
-        await axios.get(`${url}/auth?refresh_token=${refresh_token}`)
-        .then(async (answer) => {
-            await succesHandlingRequests('token', 'get', null, null, [answer.data.access_token])
-        })
-        .catch(async (error) => {
-            await errorHandlingRequest('token', 'GET', 1, 1, error.response.data.causes, null)
-        })
-        .finally(() => {
-            resolve()
-        })    
-    })
-}
 
 
 module.exports = { 
@@ -244,6 +243,5 @@ module.exports = {
     updateVariation,
     deleteVariation,
     uploadImage,
-    generateToken,
-    updateToken,
+    generateToken
 }

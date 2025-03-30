@@ -65,7 +65,7 @@ function gravarLog(mensagem) {
 
 
 
-async function succesHandlingRequests(destiny, resource, idHost, idTray, othersInfo){
+async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, othersInfo){
   return new Promise(async (resolve, reject) => {
 
     if(destiny=="product"){
@@ -74,7 +74,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idTray, othersI
       switch (resource) {
         case "post":
           productsDB[`${idHost}`] = {
-            "idTray": `${idTray}`,
+            "idNuvemShop": `${idNuvemShop}`,
             "status": "ATIVO",
             "variations": {}
           }
@@ -107,7 +107,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idTray, othersI
       switch (resource) {
         case "post":
           categoriesDB[`${othersInfo[0]}`] = {
-            "idTray": `${idTray}`,
+            "idNuvemShop": `${idNuvemShop}`,
             "subCategories": {}
           }
           gravarLog('Cadastrado registro no banco de ' + destiny);
@@ -129,7 +129,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idTray, othersI
 
       switch (resource) {
         case "post":
-          categoriesDB[`${othersInfo[1]}`].subCategories[`${othersInfo[0]}`] = idTray
+          categoriesDB[`${othersInfo[1]}`].subCategories[`${othersInfo[0]}`] = idNuvemShop
           gravarLog('Cadastrado registro no banco de ' + destiny);
           break;
 
@@ -150,7 +150,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idTray, othersI
 
       switch (resource) {
         case "post":
-          productsDB[`${idHost}`].variations[`${othersInfo[0]}`] = idTray
+          productsDB[`${idHost}`].variations[`${othersInfo[0]}`] = idNuvemShop
           gravarLog('Cadastrado registro no banco de ' + destiny);
           break;
 
@@ -185,19 +185,15 @@ async function succesHandlingRequests(destiny, resource, idHost, idTray, othersI
 
       switch (resource) {
         case "post":
-          configApp.tray.access_token = othersInfo[0];
-          configApp.tray.refresh_token = othersInfo[1]
-          gravarLog('Gerado token de acesso');
-          break;
-
-        case "get":
-          configApp.tray.access_token = othersInfo[0];
-          gravarLog('Atualizado token de acesso');
+          configApp.nuvemshop.access_token = othersInfo[0]
+          configApp.nuvemshop.store_id = othersInfo[1]
+          configApp.nuvemshop.code = othersInfo[2]
+          gravarLog('Gerado token de acesso com sucesso');
           break;
 
       }
-      
       fs.writeFileSync(pathConfigApp, JSON.stringify(configApp), 'utf-8')
+      gravarLog('Gravado registro no banco de ' + destiny);
       resolve()
     }
     
@@ -205,7 +201,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idTray, othersI
 }
 
 
-async function errorHandlingRequest(destiny, resource, idHost, idTray, errors, body){
+async function errorHandlingRequest(destiny, resource, idHost, idNuvemShop, errors, body){
   return new Promise(async (resolve, reject) => {
       let errorsDB = JSON.parse(fs.readFileSync(pathErrorsDB))
 
@@ -214,7 +210,7 @@ async function errorHandlingRequest(destiny, resource, idHost, idTray, errors, b
       const dataFormatada = `${data.getFullYear()}-${data.getMonth() + 1}-${data.getDate()}`;
       errorsDB[destiny][idHost] = {
         "typeRequest": resource,
-        "idTray": idTray,
+        "idNuvemShop": idNuvemShop,
         "timeRequest": dataFormatada,
         "returnRequest": errors,
         "bodyRequest": body
@@ -251,7 +247,6 @@ async function deleteErrorsRecords(){
     errorsDB.subcategory = {}
     errorsDB.variation = {}
     errorsDB.image = {}
-    errorsDB.token = {}
 
     fs.writeFileSync(pathErrorsDB, JSON.stringify(errorsDB), 'utf-8');
     gravarLog('RESETADO BANCO DE ERROS')
@@ -285,7 +280,6 @@ function copyJsonFilesToUserData() {
       'configApp.json',
       'products.json',
       'categories.json',
-      'links_img.json',
       'errorsDB.json',
       '.env'
   ];

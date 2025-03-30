@@ -16,17 +16,13 @@ function returnInfo(infoRequired){
             case 'password_database':
                 resolve(process.env.PSW_DATABASE) 
                 break;
-
-            case 'consumer_key':
-                resolve(process.env.CSM_KEY) 
-                break;
             
-            case 'consumer_secret':
-                resolve(process.env.CSM_SECRET) 
+            case 'client_secret':
+                resolve(process.env.CLI_SECRET) 
                 break;
 
-            case 'cliente_id':
-                resolve(process.env.CLI_IDIMGUR)
+            case 'client_id':
+                resolve(process.env.CLI_ID)
                 break
 
         }

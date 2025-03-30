@@ -20,10 +20,6 @@ async function saveInfos(systemSave, infos) {
         case 'host':
           dadosApp.host.pathdb = infos;
           break;
-
-        case 'nuvemshop':
-          dadosApp.nuvemshop.code = infos;
-          break;
       }
 
       let novoJson = JSON.stringify(dadosApp, null, 2);
@@ -49,13 +45,17 @@ async function returnValueFromJson(campo){
           case 'pathdbhost':
             resolve(dados.host.pathdb);
             break;
-          
-          case 'urltray':
-            resolve(dados.tray.url);
-            break;
 
           case 'codenuvemshop':
             resolve(dados.nuvemshop.code);
+            break;
+
+          case 'tokennuvemshop':
+            resolve(dados.nuvemshop.access_token);
+            break;
+
+          case 'storeidnuvemshop':
+            resolve(dados.nuvemshop.store_id);
             break;
         }
       }

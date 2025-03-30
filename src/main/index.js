@@ -5,8 +5,8 @@ const { saveInfos, returnValueFromJson } = require('./utils/manageInfoUser.js')
 const { createDependencies, limparTabela } = require('./utils/dependenciesFDB.js')
 const { copyJsonFilesToUserData, returnConfigToAccessDB, gravarLog, deleteErrorsRecords } = require('./utils/auxFunctions.js')
 const { requireAllProducts } = require('./utils/managerProducts.js')
-const { readNewRecords } = require('./utils/managerHostTableNotify.js')
-const { creatingAndUpdateAccessToken } = require('./utils/managerAccessTokenTray.js')
+const { readNewRecords } = require('./utils/managerHostTableNotify.js');
+const { preparingGenerateToken } = require('./utils/preparingRequests.js')
 
 var win;
 
@@ -51,7 +51,7 @@ app.whenReady().then(() => {
   ])
   
   tray.setContextMenu(contextMenu)
-  tray.setToolTip('Hostsync - PedOk')
+  tray.setToolTip('Hostsync - Nuvem')
 })
 
 
@@ -77,11 +77,8 @@ ipcMain.handle('saveInfoHost', async (events, args) => {
 })
 
 ipcMain.handle('saveInfoNuvemShop', async (events, args) => {
-  events.preventDefault();
-  await saveInfos('nuvemshop', args)
-  .then(() => {
-    return
-  })
+  const success = await preparingGenerateToken(args)
+  return success
 })
 
 
@@ -104,7 +101,6 @@ ipcMain.handle('startProgram', async () => {
 async function mainProcess(){
   return new Promise(async (resolve, reject) => {
     var config;
-    await creatingAndUpdateAccessToken()
 
     await returnConfigToAccessDB()
     .then(async (response) => {
