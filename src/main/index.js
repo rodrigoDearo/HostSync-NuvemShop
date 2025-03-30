@@ -32,7 +32,7 @@ app.on('window-all-closed', () => {
 })
 
 app.whenReady().then(() => {
-  copyJsonFilesToUserData()
+  //copyJsonFilesToUserData()
   createWindow()
 
   const icon = path.join(__dirname, 'img/icon.png')
@@ -76,9 +76,9 @@ ipcMain.handle('saveInfoHost', async (events, args) => {
   })
 })
 
-ipcMain.handle('saveInfoTray', async (events, args) => {
+ipcMain.handle('saveInfoNuvemShop', async (events, args) => {
   events.preventDefault();
-  await saveInfos('tray', args)
+  await saveInfos('nuvemshop', args)
   .then(() => {
     return
   })

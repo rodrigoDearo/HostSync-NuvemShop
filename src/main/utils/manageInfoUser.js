@@ -3,12 +3,11 @@ const fs = require('fs');
 const { app } = require('electron')
 const path = require('node:path')
 
-
 const readFileAsync = util.promisify(fs.readFile);
 const writeFileAsync = util.promisify(fs.writeFile);
 
-//const userDataPath = 'src/build';
-const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+const userDataPath = 'src/build';
+//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathConfigApp = path.join(userDataPath, 'configApp.json');
 
 async function saveInfos(systemSave, infos) {
@@ -22,9 +21,8 @@ async function saveInfos(systemSave, infos) {
           dadosApp.host.pathdb = infos;
           break;
 
-        case 'tray':
-          dadosApp.tray.url = infos[0];
-          dadosApp.tray.code = infos[1];
+        case 'nuvemshop':
+          dadosApp.nuvemshop.code = infos;
           break;
       }
 
@@ -56,16 +54,8 @@ async function returnValueFromJson(campo){
             resolve(dados.tray.url);
             break;
 
-          case 'codetray':
-            resolve(dados.tray.code);
-            break;
-          
-          case 'access_token':
-            resolve(dados.tray.access_token);
-            break;
-  
-          case 'refresh_token':
-            resolve(dados.tray.refresh_token);
+          case 'codenuvemshop':
+            resolve(dados.nuvemshop.code);
             break;
         }
       }
