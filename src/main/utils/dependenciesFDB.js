@@ -63,7 +63,7 @@ async function criarTabela(config){
         // CONEXAO ABERTA PARA CRIAR TABELA NOTIFICACOES_HOSTSYNC CASO NAO EXISTA
         conexao.attach(config, function(err, db) {
           if (err)
-            console.log('Erro ta aqui');
+            console.log(err);
   
           let codigo = `EXECUTE BLOCK
           AS
@@ -194,8 +194,7 @@ async function criarTabela(config){
   }
 
 
-
-  async function criarTriggerInsertCliente(config){
+  async function criarTriggerUpdateVariacao(config){
     return new Promise(async(resolve, reject) => {
       try {
         
@@ -210,15 +209,15 @@ async function criarTabela(config){
               IF (NOT EXISTS (
                   SELECT 1
                   FROM RDB$TRIGGERS
-                  WHERE RDB$TRIGGER_NAME = 'INSERT_CLIENTE_HOSTSYNC'
+                  WHERE RDB$TRIGGER_NAME = 'UPDATE_VARIACAO_HOSTSYNC'
               ))
               THEN
               BEGIN
-                  EXECUTE STATEMENT 'CREATE TRIGGER INSERT_CLIENTE_HOSTSYNC FOR CLIENTES
-                  ACTIVE AFTER INSERT POSITION 0
+                  EXECUTE STATEMENT 'CREATE TRIGGER UPDATE_VARIACAO_HOSTSYNC FOR PRODUTOS_GRADE_ITENS
+                  ACTIVE AFTER UPDATE POSITION 0
                   AS
                   BEGIN
-                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''CLIENTE'', '''', NEW.id_cliente);
+                      INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''PRODUTO'', ''VARIACAO ALTERADA'', NEW.id_produto);
                   END';
               END
           END`;
@@ -227,7 +226,7 @@ async function criarTabela(config){
             if (err)
               throw err;
   
-            console.log('TRIGGER INSERT_CLIENTE_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
+            console.log('TRIGGER UPDATE_VARIACAO_HOSTSYNC FOI CRIADA EM CASO DE AUSÊNCIA');
             resolve();
           });
           
@@ -239,10 +238,10 @@ async function criarTabela(config){
       }
     })
   }
+  
+  
 
-
-
-  async function criarTriggerUpdateCliente(config){
+  async function criarTriggerDeleteVariacao(config){
     return new Promise(async(resolve, reject) => {
       try {
         
@@ -257,15 +256,15 @@ async function criarTabela(config){
                 IF (NOT EXISTS (
                     SELECT 1
                     FROM RDB$TRIGGERS
-                    WHERE RDB$TRIGGER_NAME = 'UPDATE_CLIENTE_HOSTSYNC'
+                    WHERE RDB$TRIGGER_NAME = 'DELETE_VARIACAO_HOSTSYNC'
                 ))
                 THEN
                 BEGIN
-                    EXECUTE STATEMENT 'CREATE TRIGGER UPDATE_CLIENTE_HOSTSYNC FOR CLIENTES
-                    ACTIVE AFTER UPDATE POSITION 0
+                    EXECUTE STATEMENT 'CREATE TRIGGER DELETE_VARIACAO_HOSTSYNC FOR PRODUTOS_GRADE_ITENS
+                    ACTIVE AFTER DELETE POSITION 0
                     AS
                     BEGIN
-                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''CLIENTE'', '''', NEW.id_cliente);
+                        INSERT INTO NOTIFICACOES_HOSTSYNC (id, tipo, obs, iditem) VALUES (NEXT VALUE FOR GEN_NOTIFICACOES_HOSTSYNC_ID, ''PRODUTO'', ''VARIACAO DELETADA'', OLD.id_produto);
                     END';
                 END
             END`;
@@ -274,7 +273,7 @@ async function criarTabela(config){
               if (err)
                 throw err;
       
-              console.log('TRIGGER UPDATE_CLIENTE_HOSTSYNC FOI CRIADO EM CASO DE AUSENCIA');
+              console.log('TRIGGER DELETE_VARIACAO_HOSTSYNC FOI CRIADO EM CASO DE AUSÊNCIA');
               resolve();
             });
       
@@ -286,7 +285,6 @@ async function criarTabela(config){
       }
     })
   }
-
 
 
   async function limparTabela(config){
@@ -333,10 +331,10 @@ async function createDependencies(config) {
       await criarTriggerUpdateProduto(config);
     })
     .then(async () => {
-      await criarTriggerInsertCliente(config);
+      await criarTriggerUpdateVariacao(config);
     })
     .then(async () => {
-      await criarTriggerUpdateCliente(config);
+      await criarTriggerDeleteVariacao(config);
     })
     .catch(() => {
       resolve({code:500, msg:"Erro ao criar/verificar as dependencias SQL necessarias no banco FDB. Consultar o desenvolvedor do sistema com URGENCIA"});

@@ -1,5 +1,8 @@
 {
-    "product": {},
-    "customer": {},
-    "sale": {}
+    "product":{},
+    "category":{},
+    "subcategory":{},
+    "variant":{},
+    "token":{},
+    "image":{}
 }

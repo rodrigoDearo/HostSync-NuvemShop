@@ -4,8 +4,7 @@
   "main": "./src/main/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ./src/main/index.js",
-    "build": "electron-builder"
+    "start": "electron ./src/main/index.js"
   },
   "repository": {
     "type": "git",
@@ -19,46 +18,7 @@
   "homepage": "https://github.com/rodrigoDearo/HostSync-NuvemShop#readme",
   "description": "",
   "devDependencies": {
-    "electron": "^34.1.1",
-    "electron-builder": "^25.1.8"
-  },
-  "build": {
-    "appId": "HostSync.NuvemShop.app",
-    "productName": "HostSync-NuvemShop",
-    "copyright": "© 2024 Rodrigo Dearo",
-    "directories": {
-      "output": "dist"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "./src/renderer/assets/icon.ico"
-    },
-    "extraFiles": [
-      {
-        "from": "./configApp.json",
-        "to": "configApp.json"
-      },
-      {
-        "from": "./products.json",
-        "to": "products.json"
-      },
-      {
-        "from": "./customers.json",
-        "to": "customers.json"
-      },
-      {
-        "from": "./sales.json",
-        "to": "sales.json"
-      },
-      {
-        "from": "./errorsDB.json",
-        "to": "errorsDB.json"
-      },
-      {
-        "from": "./.env",
-        "to": ".env"
-      }
-    ]
+    "electron": "^34.1.1"
   },
   "dependencies": {
     "axios": "^1.7.9",

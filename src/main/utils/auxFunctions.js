@@ -6,17 +6,15 @@ const { returnInfo } = require('../envManager');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { error } = require('node:console');
 
-//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
-
-const userDataPath = path.join(__dirname, '../../build')
-
+//const userDataPath = 'src/build';
+const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathLog = path.join(userDataPath, 'logs');
 const pathConfigApp = path.join(userDataPath, 'configApp.json');
 const pathProducts = path.join(userDataPath, 'products.json');
-const pathCustomers = path.join(userDataPath, 'customers.json');
-const pathSales = path.join(userDataPath, 'sales.json');
+const pathCategories = path.join(userDataPath, 'categories.json');
 const pathErrorsDB = path.join(userDataPath, 'errorsDB.json');
 
+var config;
 
 async function returnConfigToAccessDB(){
     return new Promise(async (resolve, reject) => {
@@ -64,21 +62,10 @@ function gravarLog(mensagem) {
       }
   });
 }
-  
-
-
-async function incrementIdRequestPost(){
-  return new Promise(async (resolve, reject) => {
-    const configApp = JSON.parse(fs.readFileSync(pathConfigApp, 'utf-8'));
-    configApp.pedidoOk.idRequestPost++;
-    fs.writeFileSync(pathConfigApp, JSON.stringify(configApp), 'utf-8')
-    resolve()
-  })
-}
 
 
 
-async function succesHandlingRequests(destiny, resource, idHost, idPedOk){
+async function succesHandlingRequests(destiny, resource, idHost, idTray, othersInfo){
   return new Promise(async (resolve, reject) => {
 
     if(destiny=="product"){
@@ -87,110 +74,154 @@ async function succesHandlingRequests(destiny, resource, idHost, idPedOk){
       switch (resource) {
         case "post":
           productsDB[`${idHost}`] = {
-            "idPedidoOk": `${idPedOk}`,
-            "status": "ATIVO"
+            "idTray": `${idTray}`,
+            "status": "ATIVO",
+            "variations": {}
           }
-          await incrementIdRequestPost()
-          .then(async () => {
-            await verifyToDeleteErrorRecord(destiny, idHost)
-          })
+          await verifyToDeleteErrorRecord(destiny, idHost)
+          gravarLog('Cadastrado registro no banco de ' + destiny);
           break;
 
         case "update":
-          
+          gravarLog('Atualizado registro no banco de ' + destiny);
           break;
 
         case "delete":
           productsDB[`${idHost}`].status = "INATIVO";
+          gravarLog('Deletado registro no banco de ' + destiny);
           break;
 
         case "undelete":
           productsDB[`${idHost}`].status = "ATIVO";
+          gravarLog('Re-Cadastrado registro no banco de ' + destiny);
           break;
       }
 
       fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
-      gravarLog('Gravado registro no banco de ' + destiny);
+      gravarLog('Gravado/Atualizado registro no banco de ' + destiny);
       resolve()
     }else
-    if(destiny=="customer"){
-      let customersDB = JSON.parse(fs.readFileSync(pathCustomers))
+    if(destiny=="category"){
+      let categoriesDB = JSON.parse(fs.readFileSync(pathCategories))
 
       switch (resource) {
         case "post":
-          customersDB[`${idHost}`] = {
-            "idPedidoOk": `${idPedOk}`,
-            "status": "ATIVO"
+          categoriesDB[`${othersInfo[0]}`] = {
+            "idTray": `${idTray}`,
+            "subCategories": {}
           }
-          await incrementIdRequestPost()
-          .then(async () => {
-            await verifyToDeleteErrorRecord(destiny, idHost)
-          })
-          break;
-
-          case "update":
-          
+          gravarLog('Cadastrado registro no banco de ' + destiny);
           break;
 
         case "delete":
-          customersDB[`${idHost}`].status = "INATIVO";
+          categoriesDB[`${othersInfo[0]}`].status = "INATIVO";
+          gravarLog('Deletado registro no banco de ' + destiny);
           break;
 
-        case "undelete":
-          customersDB[`${idHost}`].status = "ATIVO";
-          break;
       }
       
-      fs.writeFileSync(pathCustomers, JSON.stringify(customersDB), 'utf-8')
-      gravarLog('Gravado registro no banco de ' + destiny);
+      fs.writeFileSync(pathCategories, JSON.stringify(categoriesDB), 'utf-8')
+      gravarLog('Gravado/Atualizado registro no banco de ' + destiny);
       resolve()
     }else
-    if(destiny=="sale"){
-      let salesDB = JSON.parse(fs.readFileSync(pathSales))
+    if(destiny=="subcategory"){
+      let categoriesDB = JSON.parse(fs.readFileSync(pathCategories))
 
-      salesDB[idPedOk] = idHost;
+      switch (resource) {
+        case "post":
+          categoriesDB[`${othersInfo[1]}`].subCategories[`${othersInfo[0]}`] = idTray
+          gravarLog('Cadastrado registro no banco de ' + destiny);
+          break;
+
+        case "delete":
+          delete categoriesDB[`${othersInfo[0]}`].subCategories[`${othersInfo[1]}`]
+          gravarLog('Deletado registro no banco de ' + destiny);
+          break;
+
+
+      }
       
-      fs.writeFileSync(pathSales, JSON.stringify(salesDB), 'utf-8')
-      gravarLog('Gravado registro no banco de ' + destiny);
+      fs.writeFileSync(pathCategories, JSON.stringify(categoriesDB), 'utf-8')
+      gravarLog('Gravado/Atualizado registro no banco de ' + destiny);
+      resolve()
+    }else
+    if(destiny=="variation"){
+      let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+
+      switch (resource) {
+        case "post":
+          productsDB[`${idHost}`].variations[`${othersInfo[0]}`] = idTray
+          gravarLog('Cadastrado registro no banco de ' + destiny);
+          break;
+
+        case "update":
+          gravarLog('Atualizado registro no banco de ' + destiny);
+          break;
+
+        case "delete":
+          delete productsDB[`${idHost}`].variations[`${othersInfo[0]}`]
+          gravarLog('Deletado registro no banco de ' + destiny);
+          break;
+
+
+      }
+      
+      fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
+      resolve()
+    }else
+    if(destiny=="image"){
+
+      switch (resource) {
+        case "post":
+          gravarLog('Atualizado imagem de produto com sucesso');
+          break;
+
+      }
+      
+      resolve()
+    }else
+    if(destiny=="token"){
+      let configApp = JSON.parse(fs.readFileSync(pathConfigApp))
+
+      switch (resource) {
+        case "post":
+          configApp.tray.access_token = othersInfo[0];
+          configApp.tray.refresh_token = othersInfo[1]
+          gravarLog('Gerado token de acesso');
+          break;
+
+        case "get":
+          configApp.tray.access_token = othersInfo[0];
+          gravarLog('Atualizado token de acesso');
+          break;
+
+      }
+      
+      fs.writeFileSync(pathConfigApp, JSON.stringify(configApp), 'utf-8')
       resolve()
     }
+    
   })
 }
 
 
-
-async function updateDatetimeOfLastRequest(dateTime){
-  return new Promise(async (resolve, reject) => {
-      let appDB = JSON.parse(fs.readFileSync(pathConfigApp));
-
-      appDB.pedidoOk.last_request = dateTime;
-
-      fs.writeFileSync(pathConfigApp, JSON.stringify(appDB), 'utf-8');
-      gravarLog('Atualizado registro da ultima request no banco')
-      resolve()
-  })
-}
-
-
-
-async function errorHandlingRequest(destiny, resource, idHost, idPedidoOk, errors, body){
+async function errorHandlingRequest(destiny, resource, idHost, idTray, errors, body){
   return new Promise(async (resolve, reject) => {
       let errorsDB = JSON.parse(fs.readFileSync(pathErrorsDB))
 
       const data = new Date();
       data.setHours(data.getHours() - 3);
       const dataFormatada = `${data.getFullYear()}-${data.getMonth() + 1}-${data.getDate()}`;
-
       errorsDB[destiny][idHost] = {
         "typeRequest": resource,
-        "idPedidoOk": idPedidoOk,
+        "idTray": idTray,
         "timeRequest": dataFormatada,
         "returnRequest": errors,
         "bodyRequest": body
       }
 
       fs.writeFileSync(pathErrorsDB, JSON.stringify(errorsDB), 'utf-8');
-      gravarLog('Gravado registro no banco de erros')
+      gravarLog('Gravado/Atualizado registro no banco de erros')
       resolve()
   })
 }
@@ -216,8 +247,11 @@ async function deleteErrorsRecords(){
     let errorsDB = JSON.parse(fs.readFileSync(pathErrorsDB));
 
     errorsDB.product = {}
-    errorsDB.customer = {}
-    errorsDB.sale = {}
+    errorsDB.category = {}
+    errorsDB.subcategory = {}
+    errorsDB.variation = {}
+    errorsDB.image = {}
+    errorsDB.token = {}
 
     fs.writeFileSync(pathErrorsDB, JSON.stringify(errorsDB), 'utf-8');
     gravarLog('RESETADO BANCO DE ERROS')
@@ -243,41 +277,6 @@ async function getActualDatetime(){
 }
 
 
-async function returnCustomerIdHostFromIdPed(idCustomerPed){
-  return new Promise(async (resolve, reject) => {
-      let customersDB = JSON.parse(fs.readFileSync(pathCustomers))
-
-    for (const idCustomerHost in customersDB) {
-      if (customersDB.hasOwnProperty(idCustomerHost)) {
-          const customer = customersDB[idCustomerHost];
-          if (customer.idPedidoOk == idCustomerPed) {
-              resolve(idCustomerHost) 
-          }
-      }
-    }
-    return null;
-  })
-}
-
-
-async function returnProductIdHostFromIdPed(idProductPed){
-  return new Promise(async (resolve, reject) => {
-    let productsDB = JSON.parse(fs.readFileSync(pathProducts))
-
-    for (const idProductHost in productsDB) {
-      if (productsDB.hasOwnProperty(idProductHost)) {
-          const product = productsDB[idProductHost];
-          if (product.idPedidoOk == idProductPed) {
-              resolve(idProductHost) 
-          }
-      }
-    }
-
-    return null;
-  })
-}
-
-
 function copyJsonFilesToUserData() {
   // Caminho correto onde os arquivos são empacotados
   const resourcesPath = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath);
@@ -285,8 +284,8 @@ function copyJsonFilesToUserData() {
   const filesToCopy = [
       'configApp.json',
       'products.json',
-      'customers.json',
-      'sales.json',
+      'categories.json',
+      'links_img.json',
       'errorsDB.json',
       '.env'
   ];
@@ -295,7 +294,7 @@ function copyJsonFilesToUserData() {
       const sourcePath = path.join(resourcesPath, file);
       const destinationPath = path.join(userDataPath, file);
 
-      console.log(`📂 Copiando: ${file}`);
+      console.log(`Copiando: ${file}`);
 
       if (!fs.existsSync(userDataPath)) {
           fs.mkdirSync(userDataPath, { recursive: true });
@@ -304,7 +303,7 @@ function copyJsonFilesToUserData() {
       if (!fs.existsSync(destinationPath)) {
           if (fs.existsSync(sourcePath)) {
               fs.copyFileSync(sourcePath, destinationPath);
-              console.log(`Copiado ${file} para ${userDataPath}`);
+              console.log(`Copiado file para ${userDataPath}`);
           } else {
               console.warn(`Arquivo nao encontrado: ${sourcePath}`);
           }
@@ -318,13 +317,9 @@ function copyJsonFilesToUserData() {
 module.exports = {
     copyJsonFilesToUserData,
     returnConfigToAccessDB,
-    incrementIdRequestPost,
     succesHandlingRequests,
-    updateDatetimeOfLastRequest,
     errorHandlingRequest,
     deleteErrorsRecords,
     getActualDatetime,
-    returnCustomerIdHostFromIdPed,
-    returnProductIdHostFromIdPed,
     gravarLog
 }

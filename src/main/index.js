@@ -5,9 +5,8 @@ const { saveInfos, returnValueFromJson } = require('./utils/manageInfoUser.js')
 const { createDependencies, limparTabela } = require('./utils/dependenciesFDB.js')
 const { copyJsonFilesToUserData, returnConfigToAccessDB, gravarLog, deleteErrorsRecords } = require('./utils/auxFunctions.js')
 const { requireAllProducts } = require('./utils/managerProducts.js')
-const { requireAllCustomers } = require('./utils/managerCustomers.js')
 const { readNewRecords } = require('./utils/managerHostTableNotify.js')
-const { managementRequestsSales } = require('./utils/managerSales.js')
+const { creatingAndUpdateAccessToken } = require('./utils/managerAccessTokenTray.js')
 
 var win;
 
@@ -33,10 +32,10 @@ app.on('window-all-closed', () => {
 })
 
 app.whenReady().then(() => {
- // copyJsonFilesToUserData()
+  copyJsonFilesToUserData()
   createWindow()
 
-  const icon = path.join(__dirname, './img/icon_noBG.png')
+  const icon = path.join(__dirname, 'img/icon.png')
   tray = new Tray(icon)
 
   const contextMenu = Menu.buildFromTemplate([
@@ -52,7 +51,7 @@ app.whenReady().then(() => {
   ])
   
   tray.setContextMenu(contextMenu)
-  tray.setToolTip('Hostsync - NuvemShop')
+  tray.setToolTip('Hostsync - PedOk')
 })
 
 
@@ -77,9 +76,9 @@ ipcMain.handle('saveInfoHost', async (events, args) => {
   })
 })
 
-ipcMain.handle('saveInfoNuvemShop', async (events, args) => {
+ipcMain.handle('saveInfoTray', async (events, args) => {
   events.preventDefault();
-  await saveInfos('nuvemshop', args)
+  await saveInfos('tray', args)
   .then(() => {
     return
   })
@@ -105,6 +104,7 @@ ipcMain.handle('startProgram', async () => {
 async function mainProcess(){
   return new Promise(async (resolve, reject) => {
     var config;
+    await creatingAndUpdateAccessToken()
 
     await returnConfigToAccessDB()
     .then(async (response) => {
@@ -128,20 +128,11 @@ async function mainProcess(){
       }
     })
     .then(async () => {
-      let mensageReturn = await requireAllCustomers(config)
-      if(mensageReturn.code == 500){
-        reject(mensageReturn)
-      }
-    }) 
-    .then(async () => {
       setInterval(async () => {
         await readNewRecords(config)
-        .then(async () => {
-            await managementRequestsSales(config)
-        })
         .then(() => {
           gravarLog('---------------------------------------------------------------------')
-          gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES E DAS VENDAS')
+          gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES')
           gravarLog('---------------------------------------------------------------------')
         })
       
@@ -151,9 +142,9 @@ async function mainProcess(){
 }
 
 
+
 /**
- * VERIFICAR SE ESTA VAZIO, SE SIM GERAR ACCESS_TOKEN
- * VERIFICAR CATEGORIA POR CATEGORIA
- * VERIFICAR PRODUTO POR PRODUTO
- * VERIFICAR VARIAÇÃO POR VARIAÇÃO
+ * VER MELHORIAS QUE COLOQUEI NO CELULAR SE VALEM A PENA
+
  */
+

@@ -5,7 +5,7 @@ const WINDOW_API = {
     minimizeApp: () => ipcRenderer.send('minimize'),
 
     saveHost: (pathdb) => ipcRenderer.invoke('saveInfoHost', pathdb),
-    saveNuvemShop: (url, code) => ipcRenderer.invoke('saveInfoNuvemShop', [url, code]),
+    saveTray: (url, code) => ipcRenderer.invoke('saveInfoTray', [url, code]),
     getInfoUser: (field) => ipcRenderer.invoke('getInfoUser', field),
     start: () => ipcRenderer.invoke('startProgram')
 }

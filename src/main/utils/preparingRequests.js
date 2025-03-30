@@ -1,230 +1,240 @@
-const { postProduct, patchProduct, deleteProduct, undeleteProduct, postCustomer, patchCustomer, deleteCustomer, undeleteCustomer, getSales } = require('./requestsPedidoOk');
+const { registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, registerVariation, updateVariation, deleteVariation, uploadImage } = require('./requestsTray');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
-const { incrementIdRequestPost } = require('./auxFunctions');
 
 async function preparingPostProduct(product){
     return new Promise(async (resolve, reject) => {
-        let body, header;
+        let body, infosTray;
 
-        await returnHeader()
+        await returnURLandAccessToken()
         .then(async (response) => {
-            header = response;
-            product.id_parceiro  = await returnValueFromJson('idparceiro')
-
-            delete product.status
-            return product
+            infosTray = response;
+            body = product
         })
-        .then(async (response) => {
-            body = response
-            await postProduct(body, header)
-            .catch(async (error) => {
-                await incrementIdRequestPost()
-                .then(async () => {
-                    await preparingPostProduct(product)
-                })
+        .then(async () => {
+            let idHost = body.Product.codigo
+            delete body.Product.codigo
+            await registerProduct(infosTray[0], infosTray[1], body, idHost)
+            .then(() => {
+                resolve();
             })
         }) 
-        .then(() => {
-            resolve()
-        })
-
     })  
 }
 
 
 async function preparingUpdateProduct(product, idproduct){
     return new Promise(async (resolve, reject) => {
-        let body, header, idHost;
+        let body, infosTray;
 
-        await returnHeader()
+        await returnURLandAccessToken()
         .then(async (response) => {
-            header = response;
-            idHost = product.codigo;
-
-            delete product.embalagem
-            delete product.status
-            return product
-        })
-        .then(async (response) => {
-            body = response
-            await patchProduct(body, header, idproduct, idHost);
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingDeleteProduct(idproduct, idHost){
-    return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response
+            infosTray = response;
+            body = product
         })
         .then(async () => {
-            await deleteProduct(header, idproduct, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingUndeleteProduct(idproduct, idHost){
-    return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response
-        })
-        .then(async () => {
-            await undeleteProduct(header, idproduct, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingPostCustomer(customer){
-    return new Promise(async (resolve, reject) => {
-        let body, header
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response;
-            customer.id_parceiro = await returnValueFromJson('idparceiro')
-            delete customer.status
-
-            return customer
-        })
-        .then(async (response) => {
-            body = response
-            await postCustomer(body, header)
-            .catch(async (error) => {
-                await incrementIdRequestPost()
-                .then(async () => {
-                    await preparingPostCustomer(customer)
-                })
+            let idHost = body.Product.codigo
+            delete body.Product.codigo
+            await updateProduct(infosTray[0], infosTray[1], body, idproduct, idHost)
+            .then(() => {
+                resolve();
             })
         }) 
-        .then(() => {
-            resolve()
-        })
+    })
+}
 
+
+async function preparingDeleteProduct(product, idproduct){
+    return new Promise(async (resolve, reject) => {
+        let body, infosTray;
+
+        await returnURLandAccessToken()
+        .then(async (response) => {
+            infosTray = response;
+            body = product
+        })
+        .then(async () => {
+            let idHost = body.Product.codigo
+            delete body.Product.codigo
+            await deleteProduct(infosTray[0], infosTray[1], body, idproduct, idHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })
+}
+
+
+async function preparingUndeleteProduct(product, idproduct){
+    return new Promise(async (resolve, reject) => {
+        let body, infosTray;
+
+        await returnURLandAccessToken()
+        .then(async (response) => {
+            infosTray = response;
+            body = product
+        })
+        .then(async () => {
+            let idHost = body.Product.codigo
+            delete body.Product.codigo
+            await undeleteProduct(infosTray[0], infosTray[1], body, idproduct, idHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })
+}
+
+
+//
+
+
+async function preparingPostCategory(category){
+    return new Promise(async (resolve, reject) => {
+        let infosTray;
+        let body = {
+            "Category": {
+                "name": category
+              }
+          }
+
+        await returnURLandAccessToken()
+        .then(async (response) => {
+            infosTray = response;
+        })
+        .then(async () => {
+            await registerCategory(infosTray[0], infosTray[1], body, 'category', category)
+            .then((id) => {
+                resolve(id ?? null)
+            })
+        }) 
     })  
 }
 
 
-async function preparingUpdateCustomer(customer, idcustomer){
+async function preparingPostSubCategory(category, subcategory, category_id){
     return new Promise(async (resolve, reject) => {
-        let body, header, idHost;
+        let infosTray;
+        let body = {
+            "Category": {
+                "name": subcategory,
+                "parent_id": category_id
+              }
+          }
 
-        await returnHeader()
+        await returnURLandAccessToken()
         .then(async (response) => {
-            header = response;
-            idHost = customer.codigo
-
-            delete customer.status
-            return customer
-        })
-        .then(async (response) => {
-            body = response
-            await patchCustomer(body, header, idcustomer, idHost);
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingDeleteCustomer(idcustomer, idHost){
-    return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response
+            infosTray = response;
         })
         .then(async () => {
-            await deleteCustomer(header, idcustomer, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
+            await registerCategory(infosTray[0], infosTray[1], body, 'subcategory', category)
+            .then((id) => {
+                resolve(id ?? null)
+            })
+        }) 
+    })  
 }
 
 
-async function preparingUndeleteCustomer(idcustomer, idHost){
+async function preparingPostVariation(variant){
     return new Promise(async (resolve, reject) => {
-        let header;
+        let body, infosTray;
 
-        await returnHeader()
+        await returnURLandAccessToken()
         .then(async (response) => {
-            header = response
+            infosTray = response;
+            body = variant
         })
         .then(async () => {
-            await undeleteCustomer(header, idcustomer, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
+            let idProductHost = body.Variant.codigo
+            delete body.Variant.codigo
+            await registerVariation(infosTray[0], infosTray[1], body, idProductHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })  
 }
 
 
-async function preparingGetSales(dateTime, page){
+async function preparingUpdateVariation(variant, idVariant){
     return new Promise(async (resolve, reject) => {
-        let header;
+        let body, infosTray;
 
-        await returnHeader()
+        await returnURLandAccessToken()
         .then(async (response) => {
-            header = response
+            infosTray = response;
+            body = variant
         })
         .then(async () => {
-            return await getSales(dateTime, page, header)
-        })
-        .then((response) => {
-            resolve(response)
-        })
+            let idProductHost = body.Variant.codigo
+            delete body.Variant.codigo
+            await updateVariation(infosTray[0], infosTray[1], body, idVariant, idProductHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
     })
 }
 
 
-async function returnHeader(){
+async function preparingDeleteVariation(idVariant, idProdutoHost, grade){
     return new Promise(async (resolve, reject) => {
-        let tokenParceiro, tokenPedidoOk;
+        let infosTray;
 
-        await returnInfo('token_partner')
-        .then(response => {
-            tokenParceiro = response
+        await returnURLandAccessToken()
+        .then(async (response) => {
+            infosTray = response;
         })
-
-        await returnValueFromJson('tokenpedidook')
-        .then(response => {
-            tokenPedidoOk = response
-        })
-
-        const config = {
-            headers: {
-                'token_parceiro': tokenParceiro,
-                'token_pedidook': tokenPedidoOk,
-                'Content-Type': 'application/json'
-            }       
-        }
-
-        resolve(config)
+        .then(async () => {
+            await deleteVariation(infosTray[0], infosTray[1], idVariant, idProdutoHost, grade)
+            .then(() => {
+                resolve();
+            })
+        }) 
     })
 }
+
+async function preparingUploadImage(image, idProductTray, idProductHost){
+    return new Promise(async (resolve, reject) => {
+        let body, infosTray;
+
+        await returnURLandAccessToken()
+        .then(async (response) => {
+            infosTray = response;
+            body = {
+                "Images":  {
+                     "picture_source_1":image,
+                 }
+             }
+        })
+        .then(async () => {
+            await uploadImage(infosTray[0], infosTray[1], body, idProductTray, idProductHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })  
+}
+
+
+async function returnURLandAccessToken(){
+    return new Promise(async (resolve, reject) => {
+        let url, access_token;
+
+        await returnValueFromJson('access_token')
+        .then(async accessTray => {
+            access_token = accessTray
+            await returnValueFromJson('urltray')
+            .then(async urlTray => {
+                url = urlTray
+                resolve([url, access_token])
+            })
+        })
+
+    })
+}
+
 
 
 
@@ -234,9 +244,10 @@ module.exports = {
     preparingUpdateProduct,
     preparingDeleteProduct,
     preparingUndeleteProduct,
-    preparingPostCustomer,
-    preparingUpdateCustomer,
-    preparingDeleteCustomer,
-    preparingUndeleteCustomer,
-    preparingGetSales
+    preparingPostCategory,
+    preparingPostSubCategory,
+    preparingPostVariation,
+    preparingUpdateVariation,
+    preparingDeleteVariation,
+    preparingUploadImage
 }
