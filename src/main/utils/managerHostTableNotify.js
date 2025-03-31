@@ -52,9 +52,7 @@ async function requireAllRecordsProductNotifyTable(config){
             let codigoSQL = `SELECT 
                                 P.ID_PRODUTO,
                                 P.PRODUTO,
-                                P.BARRAS,
                                 P.DESCRICAO_COMPLEMENTAR,
-                                P.OBS,
                                 P.VALOR_VENDA,
                                 P.CUSTO,
                                 M.MARCA,

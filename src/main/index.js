@@ -132,9 +132,18 @@ async function mainProcess(){
           gravarLog('---------------------------------------------------------------------')
         })
       
-      }, 600000);
+      }, 300000);
     })
   })
 }
 
 
+/**
+ * 
+ * VERIFICAR ERRO VARIANTES
+ * TESTAR SOFTWARE MELHOR
+ * IMAGENS
+ * VERIFICAR SOBRE CATEGORIAS, SER NULL OU " "
+ * REALIZAR TODOS TIPOS DE TESTES
+ * 
+ */

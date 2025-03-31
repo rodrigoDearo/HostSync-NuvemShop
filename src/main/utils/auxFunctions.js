@@ -99,7 +99,6 @@ async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, ot
       }
 
       fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
-      gravarLog('Gravado/Atualizado registro no banco de ' + destiny);
       resolve()
     }else
     if(destiny=="category"){
@@ -193,7 +192,6 @@ async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, ot
 
       }
       fs.writeFileSync(pathConfigApp, JSON.stringify(configApp), 'utf-8')
-      gravarLog('Gravado registro no banco de ' + destiny);
       resolve()
     }
     

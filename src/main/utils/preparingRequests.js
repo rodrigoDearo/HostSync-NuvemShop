@@ -23,7 +23,7 @@ async function preparingPostProduct(product){
 }
 
 
-async function preparingUpdateProduct(product, idproduct){
+async function preparingUpdateProduct(idproduct, product){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
@@ -33,8 +33,8 @@ async function preparingUpdateProduct(product, idproduct){
             body = product
         })
         .then(async () => {
-            let idHost = body.Product.codigo
-            delete body.Product.codigo
+            let idHost = body.codigo
+            delete body.codigo
             await updateProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
             .then(() => {
                 resolve();
@@ -44,18 +44,18 @@ async function preparingUpdateProduct(product, idproduct){
 }
 
 
-async function preparingDeleteProduct(product, idproduct){
+async function preparingDeleteProduct(idHost, idproduct, product){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
         await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
+            delete product.codigo;
+            product.published = false
             body = product
         })
         .then(async () => {
-            let idHost = body.Product.codigo
-            delete body.Product.codigo
             await deleteProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
             .then(() => {
                 resolve();
@@ -65,18 +65,18 @@ async function preparingDeleteProduct(product, idproduct){
 }
 
 
-async function preparingUndeleteProduct(product, idproduct){
+async function preparingUndeleteProduct(idHost, idproduct, product){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
         await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
+            delete product.codigo;
+            product.published = true
             body = product
         })
         .then(async () => {
-            let idHost = body.Product.codigo
-            delete body.Product.codigo
             await undeleteProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
             .then(() => {
                 resolve();
@@ -132,7 +132,7 @@ async function preparingPostSubCategory(category, subcategory, category_id){
 }
 
 
-async function preparingPostVariation(variant){
+async function preparingPostVariation(variant, idProduct, idProductHost){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
@@ -142,9 +142,8 @@ async function preparingPostVariation(variant){
             body = variant
         })
         .then(async () => {
-            let idProductHost = body.Variant.codigo
-            delete body.Variant.codigo
-            await registerVariation(infosNuvem[0], infosNuvem[1], body, idProductHost)
+            delete body.codigo
+            await registerVariation(infosNuvem[0], infosNuvem[1], body, idProduct, idProductHost)
             .then(() => {
                 resolve();
             })
@@ -153,7 +152,7 @@ async function preparingPostVariation(variant){
 }
 
 
-async function preparingUpdateVariation(variant, idVariant){
+async function preparingUpdateVariation(variant, idVariant, idProduct, idProductHost){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
@@ -161,11 +160,10 @@ async function preparingUpdateVariation(variant, idVariant){
         .then(async (response) => {
             infosNuvem = response;
             body = variant
+            delete body.codigo
         })
         .then(async () => {
-            let idProductHost = body.Variant.codigo
-            delete body.Variant.codigo
-            await updateVariation(infosNuvem[0], infosNuvem[1], body, idVariant, idProductHost)
+            await updateVariation(infosNuvem[0], infosNuvem[1], body, idProduct, idVariant, idProductHost)
             .then(() => {
                 resolve();
             })
@@ -174,7 +172,7 @@ async function preparingUpdateVariation(variant, idVariant){
 }
 
 
-async function preparingDeleteVariation(idVariant, idProdutoHost, grade){
+async function preparingDeleteVariation(idVariant, idProduct, idProductHost, grade){
     return new Promise(async (resolve, reject) => {
         let infosNuvem;
 
@@ -183,7 +181,7 @@ async function preparingDeleteVariation(idVariant, idProdutoHost, grade){
             infosNuvem = response;
         })
         .then(async () => {
-            await deleteVariation(infosNuvem[0], infosNuvem[1], idVariant, idProdutoHost, grade)
+            await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade)
             .then(() => {
                 resolve();
             })

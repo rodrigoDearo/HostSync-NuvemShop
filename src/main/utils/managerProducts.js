@@ -3,7 +3,7 @@ const fs = require ('fs')
 const path = require('node:path')
 const { app } = require('electron')
 
-const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct } = require('./preparingRequests.js');
+const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { uploadOrDeleteImageImgur, uploadOrDeleteImageNuvem } = require('./managerImages.js')
@@ -71,15 +71,15 @@ async function readingAllRecordProducts(productsRecords, index){
             let product = {
                     "codigo": record.ID_PRODUTO,
                     "name": record.PRODUTO,
-                    "brand": record.MARCA,
+                    "description": record.DESCRICAO_COMPLEMENTAR,
                     "variants": [
                         {
-                            "description": record.DESCRICAO_COMPLEMENTAR,
                             "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),
-                            "cost_price": parseFloat(String(record.CUSTO ?? '').replace(',', '.')).toFixed(2)
+                            //"cost_price": parseFloat(String(record.CUSTO ?? '').replace(',', '.')).toFixed(2),
+                            "stock": parseInt(record.ESTOQUE)
                         }
                     ],
-                    "stock": parseInt(record.ESTOQUE),
+                    "brand": `${record.MARCA}`,
                     "published": ((record.STATUS=='ATIVO')&&(parseInt(record.ESTOQUE)>0))? true : false
             }
 
@@ -101,7 +101,7 @@ async function readingAllRecordProducts(productsRecords, index){
                     .then(() => {
                         resolve()
                     })
-                }, 600);
+                }, 400);
             })
 
         }
@@ -115,16 +115,22 @@ async function registerOrUpdateProduct(product){
         let productsDB = JSON.parse(fs.readFileSync(pathProducts))
         let idProductHost = product.codigo;
 
+        let justProduct = product.variants[0];
+        let productAndVariants = product;
+        delete productAndVariants.variants //removing variants, body will be afect the product and the variants, once time the "variants" refer to father product
+
         var productAlreadyRegister = productsDB[`${product.codigo}`] ? true : false;
         var productIsActiveOnHost = product.published
 
         const functionReturnStatusOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].status }else{return null}}
-        const functionReturnIdProductOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].idNuvem }else{return null}}
+        const functionReturnUniqueIdProductOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].UniqueId }else{return null}}
+        const functionReturnIdProductAndVariantsOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].idNuvemShop }else{return null}}
         
         var statusProductOnNuvem = await functionReturnStatusOnNuvem()
 
         var productIsActiveOnNuvem =  statusProductOnNuvem == 'ATIVO' ? true : false;
-        var idProductOnNuvem = functionReturnIdProductOnNuvem()
+        var UniqueIdProductOnNuvem = functionReturnUniqueIdProductOnNuvem()
+        var IdProducAndVariants = functionReturnIdProductAndVariantsOnNuvem()
 
         if(!productAlreadyRegister&&productIsActiveOnHost){
             await preparingPostProduct(product)
@@ -140,7 +146,10 @@ async function registerOrUpdateProduct(product){
         }else
         if(productAlreadyRegister&&productIsActiveOnHost){
             if(productIsActiveOnNuvem){
-                await preparingUpdateProduct(product, idProductOnNuvem)
+                await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
+                .then(async () => {
+                    await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, product.codigo)
+                })
                 .then(async () => {
                     await requireAllVariationsOfAProduct(idProductHost)
                     .then(() => {
@@ -149,7 +158,7 @@ async function registerOrUpdateProduct(product){
                 })
             }
             else{
-                await preparingUndeleteProduct(product, idProductOnNuvem)
+                await preparingUndeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
                 .then(async () => {
                     await requireAllVariationsOfAProduct(idProductHost)
                     .then(() => {
@@ -160,7 +169,7 @@ async function registerOrUpdateProduct(product){
         }else
         if(productAlreadyRegister&&(!productIsActiveOnHost)){
             if(productIsActiveOnNuvem){
-                await preparingDeleteProduct(product, idProductOnNuvem)
+                await preparingDeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
                 .then(() => {
                     resolve()
                 })

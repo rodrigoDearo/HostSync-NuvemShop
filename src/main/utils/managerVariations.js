@@ -82,26 +82,26 @@ async function readingAllRecordVariations(variationsRecords, index, idProdutoHos
         }
         else{
             let variant = {
-                "Variant": {
-                    "codigo": record.ID_PRODUTO,
-                    "ean": record.BARRAS,
-                    "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),
-                    //"cost_price": parseFloat(String(record.CUSTO ?? '').replace(',', '.')).toFixed(2),
-                    "stock": parseInt(record.ESTOQUE),
-                    "minimum_stock": "1",
-                    "type_1": "Variação",
-                    "value_1": record.GRADE,
-                }
+                "values": [
+                      {
+                        "pt": record.GRADE
+                      }
+                ],
+                "codigo": record.ID_PRODUTO,
+                "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),
+                //"cost_price": parseFloat(String(record.CUSTO ?? '').replace(',', '.')).toFixed(2),
+                "stock": parseInt(record.ESTOQUE),
             }
             
             if(productsDB[`${record.ID_PRODUTO}`]){
-                variant.Variant.product_id = productsDB[`${record.ID_PRODUTO}`].idTray
                 await registerUpdateOrDeleteVariant(variant)
                 .then(async() => {
-                    await readingAllRecordVariations(variationsRecords, i, idProdutoHost)
-                    .then(() => {
-                        resolve()
-                    })
+                    setTimeout(async () => {
+                        await readingAllRecordVariations(variationsRecords, i, idProdutoHost)
+                        .then(() => {
+                            resolve()
+                        })
+                    }, 400);
                 })
             }
 
@@ -114,23 +114,27 @@ async function readingAllRecordVariations(variationsRecords, index, idProdutoHos
 async function registerUpdateOrDeleteVariant(variant){
     return new Promise(async (resolve, reject) => {
         let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+        let productIdHost = variant.codigo;
 
-        var variantAlreadyRegister = productsDB[`${variant.Variant.codigo}`].variations[`${variant.Variant.value_1}`] ? true : false;
+        var variantAlreadyRegister = productsDB[`${productIdHost}`].variations[`${variant.values[0].pt}`] ? true : false;
 
-        const functionReturnIdProductOnTray = () => {if(variantAlreadyRegister){ return productsDB[`${variant.Variant.codigo}`].variations[`${variant.Variant.value_1}`] }else{return null}}
-        let idVariantTray = functionReturnIdProductOnTray()
+        const functionReturnIdProductOnNuvem = () => {return productsDB[`${productIdHost}`].idNuvemShop}
+        let idProductNuvem = functionReturnIdProductOnNuvem()
+
+        const functionReturnIdVariantOnNuvem = () => {if(variantAlreadyRegister){ return productsDB[`${productIdHost}`].variations[`${variant.values[0].pt}`] }else{return null}}
+        let idVariantNuvem = functionReturnIdVariantOnNuvem()
 
         if(variantAlreadyRegister){
-            await preparingUpdateVariation(variant, idVariantTray)
+            await preparingUpdateVariation(variant, idVariantNuvem, idProductNuvem, productIdHost)
             .then(() => {
-                variationsModificateds.push(variant.Variant.value_1)
+                variationsModificateds.push(variant.values[0].pt)
                 resolve()
             })
         }else
         if(!variantAlreadyRegister){
-            await preparingPostVariation(variant)
+            await preparingPostVariation(variant, idProductNuvem, productIdHost)
             .then(() => {
-                variationsModificateds.push(variant.Variant.value_1)
+                variationsModificateds.push(variant.values[0].pt)
                 resolve()
             })
         }
@@ -141,15 +145,16 @@ async function registerUpdateOrDeleteVariant(variant){
 
 async function deleteUnlistedVariations(product, idHost, arrayVariations) {
     return new Promise(async (resolve, reject) => {
-        let variations = product.variations
+        let idProductNuvem = product.idNuvemShop;
+        let variations = product.variations;
 
         for(let i=0; i<arrayVariations.length; i++){
             delete variations[`${arrayVariations[i]}`]
         }
 
-        for (const [grade, id] of Object.entries(variations)) {
+        for (const [grade, idVariation] of Object.entries(variations)) {
             setTimeout(async () => {
-                await preparingDeleteVariation(id, idHost, grade)
+                await preparingDeleteVariation(idVariation, idProductNuvem, idHost, grade)
             }, 1000);
         }
         

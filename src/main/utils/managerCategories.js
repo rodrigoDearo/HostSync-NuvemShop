@@ -62,7 +62,7 @@ async function returnCategoryId(category, subCategory){
 }
 
 function categoryExist(data, category) {
-    return data[category]?.idTray ?? false;
+    return data[category]?.idNuvemShop ?? false;
 }
 
 function subCategoryExist(data, category, subCategory) {
