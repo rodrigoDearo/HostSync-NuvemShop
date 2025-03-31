@@ -39,7 +39,8 @@ async function requireAllVariationsOfAProduct(idProduct){
                             LEFT JOIN PRODUTOS P ON PG.ID_PRODUTO = P.ID_PRODUTO
                             LEFT JOIN GRADE G ON PG.ID_GRADE = G.ID
                             WHERE PG.ID_PRODUTO='${idProduct}'
-                            AND G.GRADE!='null';`;
+                            AND G.GRADE!='null'
+                            AND PG.ESTOQUE > 0;;`;
   
             db.query(codigoSQL, async function (err, result){
                 if (err)

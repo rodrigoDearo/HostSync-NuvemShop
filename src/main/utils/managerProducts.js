@@ -90,7 +90,12 @@ async function readingAllRecordProducts(productsRecords, index){
 
             await returnCategoryId(record.GRUPO, record.SUBGRUPO)
             .then(async (idCategory) => {
-                product.categories	= [idCategory]
+                if(product.idCategory){
+                    product.categories	= [idCategory]
+                }
+                else{
+                    product.categories	= []
+                }
                 await registerOrUpdateProduct(product)
             })/*
             .then(async () => {
