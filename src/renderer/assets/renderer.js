@@ -42,7 +42,6 @@ async function saveInfoNuvemShop(){
         document.getElementById('code-input').style.border = "2px solid red"
     }
 
-    alert(success)
 }
     
 

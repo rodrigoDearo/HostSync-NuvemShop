@@ -138,9 +138,3 @@ async function mainProcess(){
 }
 
 
-
-/**
- * VER MELHORIAS QUE COLOQUEI NO CELULAR SE VALEM A PENA
-
- */
-

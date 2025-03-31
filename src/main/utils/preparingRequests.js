@@ -6,14 +6,14 @@ async function preparingPostProduct(product){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = product
         })
         .then(async () => {
-            let idHost = body.Product.codigo
-            delete body.Product.codigo
+            let idHost = body.codigo
+            delete body.codigo
             await registerProduct(infosNuvem[0], infosNuvem[1], body, idHost)
             .then(() => {
                 resolve();
@@ -27,7 +27,7 @@ async function preparingUpdateProduct(product, idproduct){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = product
@@ -48,7 +48,7 @@ async function preparingDeleteProduct(product, idproduct){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = product
@@ -69,7 +69,7 @@ async function preparingUndeleteProduct(product, idproduct){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = product
@@ -93,12 +93,10 @@ async function preparingPostCategory(category){
     return new Promise(async (resolve, reject) => {
         let infosNuvem;
         let body = {
-            "Category": {
-                "name": category
-              }
+            "name": category 
           }
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
         })
@@ -116,13 +114,11 @@ async function preparingPostSubCategory(category, subcategory, category_id){
     return new Promise(async (resolve, reject) => {
         let infosNuvem;
         let body = {
-            "Category": {
                 "name": subcategory,
-                "parent_id": category_id
-              }
+                "parent": category_id
           }
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
         })
@@ -140,7 +136,7 @@ async function preparingPostVariation(variant){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = variant
@@ -161,7 +157,7 @@ async function preparingUpdateVariation(variant, idVariant){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = variant
@@ -182,7 +178,7 @@ async function preparingDeleteVariation(idVariant, idProdutoHost, grade){
     return new Promise(async (resolve, reject) => {
         let infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
         })
@@ -200,7 +196,7 @@ async function preparingUploadImage(image, idProductTray, idProductHost){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
 
-        await returnStoreIdandAccessToken()
+        await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;
             body = {
@@ -248,17 +244,29 @@ async function preparingGenerateToken(code){
 }
 
 
-async function returnStoreIdandAccessToken(){
+async function returnHeaderandStoreID(){
     return new Promise(async (resolve, reject) => {
-        let storeid, access_token;
+        let storeid, access_token, config;
 
+        let cli_id = await returnInfo('client_id')
         await returnValueFromJson('tokennuvemshop')
         .then(async accessNuvem => {
             access_token = accessNuvem
             await returnValueFromJson('storeidnuvemshop')
             .then(async storeidNuvem => {
                 storeid = storeidNuvem
-                resolve([storeid, access_token])
+            })
+            .then(async () => {
+                config = {
+                    headers: {
+                        'Authentication':`bearer ${access_token}`,
+                        'User-Agent':`HostSync (${cli_id})`,
+                        'Content-Type':'application/json'
+                    }
+                }   
+            })
+            .then(() => {
+                resolve([storeid, config])
             })
         })
 

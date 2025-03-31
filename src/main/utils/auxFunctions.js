@@ -75,6 +75,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, ot
         case "post":
           productsDB[`${idHost}`] = {
             "idNuvemShop": `${idNuvemShop}`,
+            "UniqueId": `${othersInfo}`,
             "status": "ATIVO",
             "variations": {}
           }
@@ -121,7 +122,6 @@ async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, ot
       }
       
       fs.writeFileSync(pathCategories, JSON.stringify(categoriesDB), 'utf-8')
-      gravarLog('Gravado/Atualizado registro no banco de ' + destiny);
       resolve()
     }else
     if(destiny=="subcategory"){
