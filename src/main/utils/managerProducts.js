@@ -72,6 +72,11 @@ async function readingAllRecordProducts(productsRecords, index){
                     "codigo": record.ID_PRODUTO,
                     "name": record.PRODUTO,
                     "description": record.DESCRICAO_COMPLEMENTAR,
+                    "attributes":[
+                        {
+                            "pt": 'Variação'
+                        }
+                    ],
                     "variants": [
                         {
                             "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),

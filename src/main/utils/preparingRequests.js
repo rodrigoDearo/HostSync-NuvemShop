@@ -35,6 +35,7 @@ async function preparingUpdateProduct(idproduct, product){
         .then(async () => {
             let idHost = body.codigo
             delete body.codigo
+            delete body.attributes
             await updateProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
             .then(() => {
                 resolve();
@@ -52,6 +53,7 @@ async function preparingDeleteProduct(idHost, idproduct, product){
         .then(async (response) => {
             infosNuvem = response;
             delete product.codigo;
+            delete body.attributes
             product.published = false
             body = product
         })
@@ -73,6 +75,7 @@ async function preparingUndeleteProduct(idHost, idproduct, product){
         .then(async (response) => {
             infosNuvem = response;
             delete product.codigo;
+            delete product.attributes
             product.published = true
             body = product
         })
