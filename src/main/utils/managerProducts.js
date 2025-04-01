@@ -6,7 +6,7 @@ const { app } = require('electron')
 const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
-const { uploadOrDeleteImageImgur, uploadOrDeleteImageNuvem } = require('./managerImages.js')
+const { uploadOrDeleteImageImgur } = require('./managerImages.js')
 
 const userDataPath = 'src/build';
 //const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
@@ -87,10 +87,9 @@ async function readingAllRecordProducts(productsRecords, index){
                     "brand": `${record.MARCA}`,
                     "published": ((record.STATUS=='ATIVO')&&(parseInt(record.ESTOQUE)>0))? true : false
             }
-
             await returnCategoryId(record.GRUPO, record.SUBGRUPO)
             .then(async (idCategory) => {
-                if(product.idCategory){
+                if(product){
                     product.categories	= [idCategory]
                 }
                 else{
@@ -158,13 +157,19 @@ async function registerOrUpdateProduct(product){
             if(productIsActiveOnNuvem){
                 await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
                 .then(async () => {
-                    await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, product.codigo)
+                    await requireAllVariationsOfAProduct(idProductHost)
                 })
                 .then(async () => {
-                    await requireAllVariationsOfAProduct(idProductHost)
-                    .then(() => {
-                        resolve();
-                    })
+                    let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
+
+                    if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
+                        await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, idProductHost)
+                        .then(() => {
+                            resolve();
+                        })
+                    }else{
+                      resolve()  
+                    } 
                 })
             }
             else{

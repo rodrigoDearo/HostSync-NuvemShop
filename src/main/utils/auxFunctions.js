@@ -44,7 +44,7 @@ async function returnConfigToAccessDB(){
 
 function gravarLog(mensagem) {
   if (!fs.existsSync(pathLog)) {
-      fs.mkdirSync(pathLog, { recursive: true }); // Adicionado recursive: true
+      fs.mkdirSync(pathLog, { recursive: true });
   }
 
   const data = new Date();
@@ -65,7 +65,7 @@ function gravarLog(mensagem) {
 
 
 
-async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, othersInfo){
+async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, othersInfo){
   return new Promise(async (resolve, reject) => {
 
     if(destiny=="product"){
@@ -79,7 +79,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, ot
             "status": "ATIVO",
             "variations": {}
           }
-          await verifyToDeleteErrorRecord(destiny, idHost)
+          await verifyToDeleteErrorRecord(destiny, idHost, 'POST')
           gravarLog('Cadastrado registro no banco de ' + destiny);
           break;
 
@@ -135,6 +135,7 @@ async function succesHandlingRequests(destiny, resource, idHost, idNuvemShop, ot
         case "delete":
           delete categoriesDB[`${othersInfo[0]}`].subCategories[`${othersInfo[1]}`]
           gravarLog('Deletado registro no banco de ' + destiny);
+          await verifyToDeleteErrorRecord(destiny, idHost, 'POST')
           break;
 
 
@@ -221,11 +222,11 @@ async function errorHandlingRequest(destiny, resource, idHost, idNuvemShop, erro
 }
 
 
-async function verifyToDeleteErrorRecord(destiny, idHost){
+async function verifyToDeleteErrorRecord(destiny, idHost, type){
   return new Promise(async (resolve, reject) => {
     let errorsDB = JSON.parse(fs.readFileSync(pathErrorsDB));
 
-    if(errorsDB[destiny][idHost]&&errorsDB[destiny][idHost].typeRequest == 'POST'){
+    if(errorsDB[destiny][idHost]&&errorsDB[destiny][idHost].typeRequest == type){
         delete errorsDB[destiny][idHost]
     }
 
@@ -244,10 +245,23 @@ async function deleteErrorsRecords(){
     errorsDB.category = {}
     errorsDB.subcategory = {}
     errorsDB.variation = {}
+    errorsDB.token = {}
     errorsDB.image = {}
 
     fs.writeFileSync(pathErrorsDB, JSON.stringify(errorsDB), 'utf-8');
     gravarLog('RESETADO BANCO DE ERROS')
+    resolve()
+  })
+}
+
+
+async function saveNewUniqueIdInProduct(idHost, id){
+  return new Promise(async (resolve, reject) => {
+    let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+
+    productsDB[`${idHost}`].UniqueId = id
+
+    fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
     resolve()
   })
 }
@@ -268,6 +282,7 @@ async function getActualDatetime(){
     resolve(actualTime)
   })
 }
+
 
 
 function copyJsonFilesToUserData() {
@@ -309,8 +324,9 @@ function copyJsonFilesToUserData() {
 module.exports = {
     copyJsonFilesToUserData,
     returnConfigToAccessDB,
-    succesHandlingRequests,
+    successHandlingRequests,
     errorHandlingRequest,
+    saveNewUniqueIdInProduct,
     deleteErrorsRecords,
     getActualDatetime,
     gravarLog
