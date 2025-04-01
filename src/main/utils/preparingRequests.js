@@ -1,4 +1,4 @@
-const { registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
+const { registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
 
@@ -92,6 +92,7 @@ async function preparingUndeleteProduct(idHost, idproduct, product){
 //
 
 
+
 async function preparingPostCategory(category){
     return new Promise(async (resolve, reject) => {
         let infosNuvem;
@@ -158,7 +159,6 @@ async function preparingPostVariation(variant, idProduct, idProductHost){
 async function preparingUpdateVariation(variant, idVariant, idProduct, idProductHost){
     return new Promise(async (resolve, reject) => {
         let body, infosNuvem;
-
         await returnHeaderandStoreID()
         .then(async (response) => {
             infosNuvem = response;

@@ -14,8 +14,8 @@ const { gravarLog } = require('./auxFunctions.js')
 const { returnInfo } = require('../envManager.js')
 const { preparingUploadImage } = require('./preparingRequests.js');
 
-const userDataPath = 'src/build';
-//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+//const userDataPath = 'src/build';
+const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathLinksIMG = path.join(userDataPath, 'links_img.json');
 const pathProducts = path.join(userDataPath, 'products.json');
 

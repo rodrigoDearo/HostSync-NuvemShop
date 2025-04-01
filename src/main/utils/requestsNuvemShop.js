@@ -1,12 +1,12 @@
 const axios = require('axios');
-const { succesHandlingRequests, errorHandlingRequest, } = require('./auxFunctions');
+const { successHandlingRequests, errorHandlingRequest, saveNewUniqueIdInProduct } = require('./auxFunctions');
 
 
 function registerProduct(store_id, header, body, idHost){
     return new Promise(async (resolve, reject) => {
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, body, header)
         .then(async (answer) => {
-            await succesHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
+            await successHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
         })
         .catch(async (error) => {
             console.log(error)
@@ -19,11 +19,30 @@ function registerProduct(store_id, header, body, idHost){
 }
 
 
+function putVariantsInProduct(store_id, header, body, idproduct, idProductHost){
+    return new Promise(async (resolve, reject) => {
+        await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}/variants/`, body, header)
+        .then(async(answer) => {
+            resolve(answer.data[0].id)
+        })
+        .catch(async (error) => {
+            await errorHandlingRequest('product', 'PUT', idProductHost, idproduct, error.response.data, body)
+            .then(() => {
+                reject()
+            })
+        })
+        .finally(() => {
+            resolve()
+        })    
+    })
+}
+
+
 function updateProduct(store_id, header, body, idproduct, idHost){
     return new Promise(async (resolve, reject) => {
         await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
         .then(async (response) => {
-            await succesHandlingRequests('product', 'update', idHost, idproduct, null)
+            await successHandlingRequests('product', 'update', idHost, idproduct, null)
         })
         .catch(async (error) => {
             await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
@@ -39,7 +58,7 @@ function deleteProduct(store_id, header, body, idproduct, idHost){
     return new Promise(async (resolve, reject) => {
         await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
         .then(async () => {
-            await succesHandlingRequests('product', 'delete', idHost, idproduct, null)
+            await successHandlingRequests('product', 'delete', idHost, idproduct, null)
         })
         .catch(async (error) => {
             await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
@@ -55,7 +74,7 @@ function undeleteProduct(store_id, header, body, idproduct, idHost){
     return new Promise(async (resolve, reject) => {
         await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
         .then(async (response) => {
-            await succesHandlingRequests('product', 'undelete', idHost, idproduct, null)
+            await successHandlingRequests('product', 'undelete', idHost, idproduct, null)
         })
         .catch(async (error) => {
             await errorHandlingRequest('product', 'UNDELETE', idHost, idproduct, error.response.data, body)
@@ -75,7 +94,7 @@ function registerCategory(store_id, header, body, type, category){
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/categories`, body, header)
         .then(async (answer) => {
             if(answer.data.id){
-                await succesHandlingRequests(type, 'post', body.name, answer.data.id, [body.name, category])
+                await successHandlingRequests(type, 'post', body.name, answer.data.id, [body.name, category])
                 .then(async () => {
                     resolve(answer.data.id)
                 })
@@ -101,7 +120,7 @@ function deleteCategory(header, idcustomer, idHost){
     return new Promise(async (resolve, reject) => {
         await axios.delete(`${url}/categories/:id`, header)
         .then(async () => {
-            await succesHandlingRequests('category', 'delete', idHost, idcustomer)
+            await successHandlingRequests('category', 'delete', idHost, idcustomer)
         })
         .catch(async (error) => {
             await errorHandlingRequest('category', 'DELETE', idHost, idcustomer, error.response.data, null)
@@ -116,11 +135,30 @@ function deleteCategory(header, idcustomer, idHost){
 // ---------------------------------------------------------------------
 
 
+function getVariants(store_id, header, idproduct, idProductHost){
+    return new Promise(async (resolve, reject) => {
+        await axios.get(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}/variants`, header)
+        .then(async (answer) => {
+                resolve(answer.data)
+        })
+        .catch(async (error) => {
+            await errorHandlingRequest('variation', 'GET', idProductHost, null, error.response.data, null)
+            .then(() => {
+                reject()
+            })
+        })
+        .finally(() => {
+            resolve()
+        })    
+    })
+}
+
+
 function registerVariation(store_id, header, body, idproduct, idProductHost){
     return new Promise(async (resolve, reject) => {
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}/variants`, body, header)
         .then(async (answer) => {
-            await succesHandlingRequests('variation', 'post', idProductHost, answer.data.id, [body.values[0].pt])
+            await successHandlingRequests('variation', 'post', idProductHost, answer.data.id, [body.values[0].pt])
         })
         .catch(async (error) => {
             await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
@@ -140,9 +178,9 @@ function updateVariation(store_id, header, body, idproduct, idVariant, idProduct
         await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}/variants/${idVariant}`, body, header)
         .then(async() => {
             if(body.values){
-                await succesHandlingRequests('variation', 'update', idProductHost, idVariant, [body.values[0].pt])
+                await successHandlingRequests('variation', 'update', idProductHost, idVariant, [body.values[0].pt])
             }else{
-                await succesHandlingRequests('product', 'update', idProductHost, idproduct, null)
+                await successHandlingRequests('product', 'update', idProductHost, idproduct, null)
             }
             
         })
@@ -156,14 +194,40 @@ function updateVariation(store_id, header, body, idproduct, idVariant, idProduct
 }
 
 
+
 function deleteVariation(store_id, header, idproduct, idVariant, idProductHost, nameVariant){
     return new Promise(async (resolve, reject) => {
         await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}/variants/${idVariant}`, header)
         .then(async () => {
-            await succesHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
+            await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
         })
         .catch(async (error) => {
-            await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, error.response.data, null)
+            if(error.response.data.description=="The last variant of a product cannot be deleted."){
+                await updateProduct(store_id, header, {"attributes": ["","",""]}, idproduct, idProductHost)
+                .then(async () => {
+                    await getVariants(store_id, header, idproduct, idProductHost)
+                    .then(async (response) => {
+                        response[0].values = []
+                        let bodyPutVariants = response
+                        await putVariantsInProduct(store_id, header, bodyPutVariants, idproduct, idProductHost)
+                        .then(async (response) => {
+                            await saveNewUniqueIdInProduct(idProductHost, response)
+                        })
+                    })
+                    .then(() => {
+
+                    })
+                })
+                .then(async () => {
+                    await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
+                })
+                .catch(async () => {
+                    await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, error.response.data, null)
+                    resolve()
+                })
+            }else{
+                await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, error.response.data, null)
+            }
         })
         .finally(() => {
             resolve()
@@ -176,7 +240,7 @@ function uploadImage(store_id, body, idProductTray, idProductHost){
     return new Promise(async (resolve, reject) => {
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, body)
         .then(async (answer) => {
-            await succesHandlingRequests('image', 'post', idProductHost, null, null)
+            await successHandlingRequests('image', 'post', idProductHost, null, null)
         })
         .catch(async (error) => {
             console.log(`${url}/products/${idProductTray}/images/?access_token=${access_token}`)
@@ -207,7 +271,7 @@ function generateToken(body){
         .then(async (answer) => {
            if(answer.data.access_token){
             success = true
-            await succesHandlingRequests('token', 'post', null, null, [
+            await successHandlingRequests('token', 'post', null, null, [
                 answer.data.access_token,
                 answer.data.user_id,
                 body.code

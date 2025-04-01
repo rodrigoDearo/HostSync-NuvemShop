@@ -32,7 +32,7 @@ app.on('window-all-closed', () => {
 })
 
 app.whenReady().then(() => {
-  //copyJsonFilesToUserData()
+  copyJsonFilesToUserData()
   createWindow()
 
   const icon = path.join(__dirname, 'img/icon.png')
@@ -137,14 +137,3 @@ async function mainProcess(){
   })
 }
 
-
-/**
- * 
- * VERIFICAR ERRO VARIANTES
- * TESTAR SOFTWARE MELHOR
- * IMAGENS
- * VERIFICAR SOBRE CATEGORIAS, SER NULL OU " "
- * REALIZAR TODOS TIPOS DE TESTES
- * VER OQ FAZER SE FOR ULTIMA VARIAÇÃO DO PRODUTO
- * E O CASO DO UNDEFINED
- */

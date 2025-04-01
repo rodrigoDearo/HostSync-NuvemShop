@@ -8,8 +8,8 @@ const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { uploadOrDeleteImageImgur } = require('./managerImages.js')
 
-const userDataPath = 'src/build';
-//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+//const userDataPath = 'src/build';
+const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
 async function requireAllProducts(config){
@@ -89,7 +89,7 @@ async function readingAllRecordProducts(productsRecords, index){
             }
             await returnCategoryId(record.GRUPO, record.SUBGRUPO)
             .then(async (idCategory) => {
-                if(product){
+                if(idCategory){
                     product.categories	= [idCategory]
                 }
                 else{
