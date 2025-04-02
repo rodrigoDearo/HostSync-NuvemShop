@@ -128,10 +128,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-
-
-# Project Files
-config/configApp.json
-config/customers.json
-config/errorsDB.json
-config/products.json

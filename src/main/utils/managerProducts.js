@@ -3,8 +3,12 @@ const fs = require ('fs')
 const path = require('node:path')
 const { app } = require('electron')
 
-const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct } = require('./preparingRequests.js');
+const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
+const { returnCategoryId } = require('./managerCategories.js');
+const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
+const { uploadOrDeleteImageImgur } = require('./managerImages.js')
 
+//const userDataPath = 'src/build';
 const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
@@ -15,7 +19,24 @@ async function requireAllProducts(config){
             if (err)
                 throw err;
   
-            let codigoSQL = `SELECT id_produto, obs, barras, PRODUTOS_GRUPO.grupo, produto, estoque, PRODUTOS_MARCA.marca, valor_venda, custo, status FROM PRODUTOS LEFT JOIN PRODUTOS_GRUPO on PRODUTOS.grupo = PRODUTOS_GRUPO.id LEFT JOIN PRODUTOS_MARCA on PRODUTOS.marca = PRODUTOS_MARCA.id`;
+            let codigoSQL = `SELECT 
+                                P.ID_PRODUTO,
+                                P.PRODUTO,
+                                P.DESCRICAO_COMPLEMENTAR,
+                                P.VALOR_VENDA,
+                                P.CUSTO,
+                                M.MARCA,
+                                P.ESTOQUE,
+                                P.STATUS,
+                                P.FOTO,
+                                P.GRADE,
+                                G.GRUPO,
+                                SG.SUBGRUPO
+                            FROM PRODUTOS P
+                            LEFT JOIN PRODUTOS_MARCA M ON P.MARCA = M.ID
+                            LEFT JOIN PRODUTOS_GRUPO G ON P.GRUPO = G.ID
+                            LEFT JOIN PRODUTOS_SUBGRUPO SG ON P.SUBGRUPO = SG.ID;
+                            `;
   
             db.query(codigoSQL, async function (err, result){
                 if (err)
@@ -23,7 +44,7 @@ async function requireAllProducts(config){
                 
                 await readingAllRecordProducts(result, 0)
                 .then(() => {
-                    resolve({code: 200, msg:'CLIENTES CONSULTADOS COM SUCESSO'});
+                    resolve({code: 200, msg:'PRODUTOS CONSULTADOS COM SUCESSO'});
                 })
                 
             });
@@ -43,31 +64,55 @@ async function readingAllRecordProducts(productsRecords, index){
         let record = productsRecords[index]
         let i = index + 1;
 
-        if(i == productsRecords.length){
+        if(i > productsRecords.length){
             resolve()
         }
         else{
             let product = {
-                "codigo": record.ID_PRODUTO,
-                "observacao": record.OBS,
-                "codigo_barra": record.BARRAS,
-                "categoria": record.GRUPO,
-                "nome": record.PRODUTO,
-                "estoque": record.ESTOQUE,
-                "marca": record.MARCA,
-                "venda": record.VALOR_VENDA,
-                "custo": record.CUSTO,
-                "embalagem": 0,
-                "status": record.STATUS
+                    "codigo": record.ID_PRODUTO,
+                    "name": record.PRODUTO,
+                    "description": record.DESCRICAO_COMPLEMENTAR,
+                    "attributes":[
+                        {
+                            "pt": 'Variação'
+                        }
+                    ],
+                    "variants": [
+                        {
+                            "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),
+                            //"cost_price": parseFloat(String(record.CUSTO ?? '').replace(',', '.')).toFixed(2),
+                            "stock": parseInt(record.ESTOQUE)
+                        }
+                    ],
+                    "brand": `${record.MARCA}`,
+                    "published": ((record.STATUS=='ATIVO')&&(parseInt(record.ESTOQUE)>0))? true : false
             }
-    
-            registerOrUpdateProduct(product)
-            .then(async() => {
-                await readingAllRecordProducts(productsRecords, i)
-                .then(() => {
-                    resolve()
+            await returnCategoryId(record.GRUPO, record.SUBGRUPO)
+            .then(async (idCategory) => {
+                if(idCategory){
+                    product.categories	= [idCategory]
+                }
+                else{
+                    product.categories	= []
+                }
+                await registerOrUpdateProduct(product)
+            })/*
+            .then(async () => {
+                await uploadOrDeleteImageImgur(record.ID_PRODUTO, record.FOTO)
+                .then(async () => {
+                    await uploadOrDeleteImageNuvem(record.ID_PRODUTO)
                 })
+                
+            })*/
+            .then(async() => {
+                setTimeout(async() => {
+                    await readingAllRecordProducts(productsRecords, i)
+                    .then(() => {
+                        resolve()
+                    })
+                }, 400);
             })
+
         }
 
     })
@@ -77,44 +122,69 @@ async function readingAllRecordProducts(productsRecords, index){
 async function registerOrUpdateProduct(product){
     return new Promise(async (resolve, reject) => {
         let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+        let idProductHost = product.codigo;
+
+        let justProduct = product.variants[0];
+        let productAndVariants = product;
+        delete productAndVariants.variants //removing variants, body will be afect the product and the variants, once time the "variants" refer to father product
 
         var productAlreadyRegister = productsDB[`${product.codigo}`] ? true : false;
-        var productIsActiveOnHost = product.status == 'ATIVO' ? true : false;
+        var productIsActiveOnHost = product.published
 
-        const functionReturnStatusOnPedOk = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].status }else{return null}}
-        const functionReturnIdProductOnPedOk = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].idPedidoOk }else{return null}}
+        const functionReturnStatusOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].status }else{return null}}
+        const functionReturnUniqueIdProductOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].UniqueId }else{return null}}
+        const functionReturnIdProductAndVariantsOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].idNuvemShop }else{return null}}
         
-        var statusProductOnPedidoOk = await functionReturnStatusOnPedOk()
+        var statusProductOnNuvem = await functionReturnStatusOnNuvem()
 
-        var productIsActiveOnPedidoOK =  statusProductOnPedidoOk == 'ATIVO' ? true : false;
-        var idProductOnPedidoOk = functionReturnIdProductOnPedOk()
+        var productIsActiveOnNuvem =  statusProductOnNuvem == 'ATIVO' ? true : false;
+        var UniqueIdProductOnNuvem = functionReturnUniqueIdProductOnNuvem()
+        var IdProducAndVariants = functionReturnIdProductAndVariantsOnNuvem()
 
         if(!productAlreadyRegister&&productIsActiveOnHost){
             await preparingPostProduct(product)
-            .then(() => {
-                resolve()
+            .then(async () => {
+                await requireAllVariationsOfAProduct(idProductHost)
+                .then(() => {
+                    resolve();
+                })
             })
         }else
         if(!productAlreadyRegister&&(!productIsActiveOnHost)){
             resolve()
         }else
         if(productAlreadyRegister&&productIsActiveOnHost){
-            if(productIsActiveOnPedidoOK){
-                await preparingUpdateProduct(product, idProductOnPedidoOk)
-                .then(() => {
-                    resolve()
+            if(productIsActiveOnNuvem){
+                await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
+                .then(async () => {
+                    await requireAllVariationsOfAProduct(idProductHost)
+                })
+                .then(async () => {
+                    let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
+
+                    if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
+                        await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, idProductHost)
+                        .then(() => {
+                            resolve();
+                        })
+                    }else{
+                      resolve()  
+                    } 
                 })
             }
             else{
-                await preparingUndeleteProduct(idProductOnPedidoOk, product.codigo)
-                .then(() => {
-                    resolve()
+                await preparingUndeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
+                .then(async () => {
+                    await requireAllVariationsOfAProduct(idProductHost)
+                    .then(() => {
+                        resolve();
+                    })
                 })
             }
         }else
         if(productAlreadyRegister&&(!productIsActiveOnHost)){
-            if(productIsActiveOnPedidoOK){
-                await preparingDeleteProduct(idProductOnPedidoOk, product.codigo)
+            if(productIsActiveOnNuvem){
+                await preparingDeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
                 .then(() => {
                     resolve()
                 })

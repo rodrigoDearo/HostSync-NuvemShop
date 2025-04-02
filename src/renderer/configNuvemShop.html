@@ -11,7 +11,12 @@
     <script>
         getInfoUserFromJSON('codenuvemshop')
         .then(async (fieldValue) => {
-            document.getElementById('code-input').value = fieldValue;
+            if(fieldValue){
+                document.getElementById('code-input').value = fieldValue;
+                document.getElementById('code-input').disabled = true;
+                document.getElementById('code-input').style.border = "2px solid green"
+                document.getElementById('saveNuvemShop').disabled = true  
+            }
         })
     </script>
 </head>
@@ -60,7 +65,7 @@
             <label class="form-label">Code</label>
             <input type="text" id="code-input" class="form-control input-text" required>
           </div>
-        <button type="submit" onclick="saveInfoNuvemShop()" class="btn btn-primary container botao-save">Salvar</button>
+        <button type="submit" onclick="saveInfoNuvemShop()" id="saveNuvemShop" class="btn btn-primary container botao-save">Salvar</button>
       </form>
 
     <img src="./assets/icon_noBG.png" id="watermark">

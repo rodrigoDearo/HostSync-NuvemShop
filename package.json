@@ -20,11 +20,11 @@
   "description": "",
   "devDependencies": {
     "electron": "^34.1.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^26.0.12"
   },
   "build": {
     "appId": "HostSync.NuvemShop.app",
-    "productName": "HostSync-NuvemShop",
+    "productName": "HostSync-Nuvem",
     "copyright": "© 2024 Rodrigo Dearo",
     "directories": {
       "output": "dist"
@@ -43,12 +43,8 @@
         "to": "products.json"
       },
       {
-        "from": "./customers.json",
-        "to": "customers.json"
-      },
-      {
-        "from": "./sales.json",
-        "to": "sales.json"
+        "from": "./categories.json",
+        "to": "categories.json"
       },
       {
         "from": "./errorsDB.json",

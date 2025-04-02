@@ -30,15 +30,21 @@ async function saveInfoNuvemShop(){
     event.preventDefault();
     
     let code = document.getElementById('code-input').value;
+    let success = await window.api.saveNuvemShop(code)
     
-    try {
-        await window.api.saveNuvemShop(code)
+    if(success){
         showSuccessPopup()
+        document.getElementById('saveNuvemShop').disabled = true  
+        document.getElementById('code-input').disabled = true;
         document.getElementById('code-input').style.border = "2px solid green"
-    } catch (error) {
-        console.error("Erro ao salvar:", error);
     }
+    else{
+        document.getElementById('code-input').style.border = "2px solid red"
+    }
+
 }
+    
+
 
 async function startSync(){
     await loadingPage(true)
@@ -86,4 +92,3 @@ function showSuccessPopup() {
       popup.classList.remove("show");
     }, 2000); // Fecha após 3 segundos
   }
-

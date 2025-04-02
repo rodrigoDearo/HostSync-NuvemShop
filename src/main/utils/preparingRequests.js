@@ -1,230 +1,279 @@
-const { postProduct, patchProduct, deleteProduct, undeleteProduct, postCustomer, patchCustomer, deleteCustomer, undeleteCustomer, getSales } = require('./requestsPedidoOk');
+const { registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
-const { incrementIdRequestPost } = require('./auxFunctions');
 
 async function preparingPostProduct(product){
     return new Promise(async (resolve, reject) => {
-        let body, header;
+        let body, infosNuvem;
 
-        await returnHeader()
+        await returnHeaderandStoreID()
         .then(async (response) => {
-            header = response;
-            product.id_parceiro  = await returnValueFromJson('idparceiro')
-
-            delete product.status
-            return product
+            infosNuvem = response;
+            body = product
         })
-        .then(async (response) => {
-            body = response
-            await postProduct(body, header)
-            .catch(async (error) => {
-                await incrementIdRequestPost()
-                .then(async () => {
-                    await preparingPostProduct(product)
-                })
+        .then(async () => {
+            let idHost = body.codigo
+            delete body.codigo
+            await registerProduct(infosNuvem[0], infosNuvem[1], body, idHost)
+            .then(() => {
+                resolve();
             })
         }) 
-        .then(() => {
-            resolve()
-        })
-
     })  
 }
 
 
-async function preparingUpdateProduct(product, idproduct){
+async function preparingUpdateProduct(idproduct, product){
     return new Promise(async (resolve, reject) => {
-        let body, header, idHost;
+        let body, infosNuvem;
 
-        await returnHeader()
+        await returnHeaderandStoreID()
         .then(async (response) => {
-            header = response;
-            idHost = product.codigo;
-
-            delete product.embalagem
-            delete product.status
-            return product
-        })
-        .then(async (response) => {
-            body = response
-            await patchProduct(body, header, idproduct, idHost);
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingDeleteProduct(idproduct, idHost){
-    return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response
+            infosNuvem = response;
+            body = product
         })
         .then(async () => {
-            await deleteProduct(header, idproduct, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingUndeleteProduct(idproduct, idHost){
-    return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response
-        })
-        .then(async () => {
-            await undeleteProduct(header, idproduct, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingPostCustomer(customer){
-    return new Promise(async (resolve, reject) => {
-        let body, header
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response;
-            customer.id_parceiro = await returnValueFromJson('idparceiro')
-            delete customer.status
-
-            return customer
-        })
-        .then(async (response) => {
-            body = response
-            await postCustomer(body, header)
-            .catch(async (error) => {
-                await incrementIdRequestPost()
-                .then(async () => {
-                    await preparingPostCustomer(customer)
-                })
+            let idHost = body.codigo
+            delete body.codigo
+            delete body.attributes
+            await updateProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
+            .then(() => {
+                resolve();
             })
         }) 
-        .then(() => {
-            resolve()
-        })
+    })
+}
 
+
+async function preparingDeleteProduct(idHost, idproduct, product){
+    return new Promise(async (resolve, reject) => {
+        let body, infosNuvem;
+
+        await returnHeaderandStoreID()
+        .then(async (response) => {
+            infosNuvem = response;
+            delete product.codigo;
+            delete body.attributes
+            product.published = false
+            body = product
+        })
+        .then(async () => {
+            await deleteProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })
+}
+
+
+async function preparingUndeleteProduct(idHost, idproduct, product){
+    return new Promise(async (resolve, reject) => {
+        let body, infosNuvem;
+
+        await returnHeaderandStoreID()
+        .then(async (response) => {
+            infosNuvem = response;
+            delete product.codigo;
+            delete product.attributes
+            product.published = true
+            body = product
+        })
+        .then(async () => {
+            await undeleteProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })
+}
+
+
+//
+
+
+
+async function preparingPostCategory(category){
+    return new Promise(async (resolve, reject) => {
+        let infosNuvem;
+        let body = {
+            "name": category 
+          }
+
+        await returnHeaderandStoreID()
+        .then(async (response) => {
+            infosNuvem = response;
+        })
+        .then(async () => {
+            await registerCategory(infosNuvem[0], infosNuvem[1], body, 'category', category)
+            .then((id) => {
+                resolve(id ?? null)
+            })
+        }) 
     })  
 }
 
 
-async function preparingUpdateCustomer(customer, idcustomer){
+async function preparingPostSubCategory(category, subcategory, category_id){
     return new Promise(async (resolve, reject) => {
-        let body, header, idHost;
+        let infosNuvem;
+        let body = {
+                "name": subcategory,
+                "parent": category_id
+          }
 
-        await returnHeader()
+        await returnHeaderandStoreID()
         .then(async (response) => {
-            header = response;
-            idHost = customer.codigo
-
-            delete customer.status
-            return customer
-        })
-        .then(async (response) => {
-            body = response
-            await patchCustomer(body, header, idcustomer, idHost);
-        })
-        .then(() => {
-            resolve()
-        })
-    })
-}
-
-
-async function preparingDeleteCustomer(idcustomer, idHost){
-    return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
-        .then(async (response) => {
-            header = response
+            infosNuvem = response;
         })
         .then(async () => {
-            await deleteCustomer(header, idcustomer, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
+            await registerCategory(infosNuvem[0], infosNuvem[1], body, 'subcategory', category)
+            .then((id) => {
+                resolve(id ?? null)
+            })
+        }) 
+    })  
 }
 
 
-async function preparingUndeleteCustomer(idcustomer, idHost){
+async function preparingPostVariation(variant, idProduct, idProductHost){
     return new Promise(async (resolve, reject) => {
-        let header;
+        let body, infosNuvem;
 
-        await returnHeader()
+        await returnHeaderandStoreID()
         .then(async (response) => {
-            header = response
+            infosNuvem = response;
+            body = variant
         })
         .then(async () => {
-            await undeleteCustomer(header, idcustomer, idHost)
-        })
-        .then(() => {
-            resolve()
-        })
-    })
+            delete body.codigo
+            await registerVariation(infosNuvem[0], infosNuvem[1], body, idProduct, idProductHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })  
 }
 
 
-async function preparingGetSales(dateTime, page){
+async function preparingUpdateVariation(variant, idVariant, idProduct, idProductHost){
     return new Promise(async (resolve, reject) => {
-        let header;
-
-        await returnHeader()
+        let body, infosNuvem;
+        await returnHeaderandStoreID()
         .then(async (response) => {
-            header = response
+            infosNuvem = response;
+            body = variant
+            delete body.codigo
         })
         .then(async () => {
-            return await getSales(dateTime, page, header)
-        })
-        .then((response) => {
-            resolve(response)
-        })
+            await updateVariation(infosNuvem[0], infosNuvem[1], body, idProduct, idVariant, idProductHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
     })
 }
 
 
-async function returnHeader(){
+async function preparingDeleteVariation(idVariant, idProduct, idProductHost, grade){
     return new Promise(async (resolve, reject) => {
-        let tokenParceiro, tokenPedidoOk;
+        let infosNuvem;
 
-        await returnInfo('token_partner')
-        .then(response => {
-            tokenParceiro = response
+        await returnHeaderandStoreID()
+        .then(async (response) => {
+            infosNuvem = response;
         })
-
-        await returnValueFromJson('tokenpedidook')
-        .then(response => {
-            tokenPedidoOk = response
-        })
-
-        const config = {
-            headers: {
-                'token_parceiro': tokenParceiro,
-                'token_pedidook': tokenPedidoOk,
-                'Content-Type': 'application/json'
-            }       
-        }
-
-        resolve(config)
+        .then(async () => {
+            await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade)
+            .then(() => {
+                resolve();
+            })
+        }) 
     })
 }
+
+
+async function preparingUploadImage(image, idProductTray, idProductHost){
+    return new Promise(async (resolve, reject) => {
+        let body, infosNuvem;
+
+        await returnHeaderandStoreID()
+        .then(async (response) => {
+            infosNuvem = response;
+            body = {
+                "Images":  {
+                     "picture_source_1":image,
+                 }
+             }
+        })
+        .then(async () => {
+            await uploadImage(infosNuvem[0], infosNuvem[1], body, idProductTray, idProductHost)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })  
+}
+
+
+async function preparingGenerateToken(code){
+    return new Promise(async (resolve, reject) => {
+        let client_secret;
+        let client_id;
+        let body;
+
+        await returnInfo('client_secret')
+        .then(async (response) => {
+            client_secret = response;
+            client_id = await returnInfo('client_id')
+        })
+        .then(async () => {
+            body = {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "grant_type": "authorization_code",
+                "code": code
+            }
+        }) 
+        .then(async () => {
+            await generateToken(body)
+            .then(response => {
+                resolve(response)
+            })
+        })
+    })
+}
+
+
+async function returnHeaderandStoreID(){
+    return new Promise(async (resolve, reject) => {
+        let storeid, access_token, config;
+
+        let cli_id = await returnInfo('client_id')
+        await returnValueFromJson('tokennuvemshop')
+        .then(async accessNuvem => {
+            access_token = accessNuvem
+            await returnValueFromJson('storeidnuvemshop')
+            .then(async storeidNuvem => {
+                storeid = storeidNuvem
+            })
+            .then(async () => {
+                config = {
+                    headers: {
+                        'Authentication':`bearer ${access_token}`,
+                        'User-Agent':`HostSync (${cli_id})`,
+                        'Content-Type':'application/json'
+                    }
+                }   
+            })
+            .then(() => {
+                resolve([storeid, config])
+            })
+        })
+
+    })
+}
+
 
 
 
@@ -234,9 +283,11 @@ module.exports = {
     preparingUpdateProduct,
     preparingDeleteProduct,
     preparingUndeleteProduct,
-    preparingPostCustomer,
-    preparingUpdateCustomer,
-    preparingDeleteCustomer,
-    preparingUndeleteCustomer,
-    preparingGetSales
+    preparingPostCategory,
+    preparingPostSubCategory,
+    preparingPostVariation,
+    preparingUpdateVariation,
+    preparingDeleteVariation,
+    preparingUploadImage,
+    preparingGenerateToken
 }
