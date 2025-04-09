@@ -93,7 +93,7 @@ function registerCategory(store_id, header, body, type, category){
     return new Promise(async (resolve, reject) => {
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/categories`, body, header)
         .then(async (answer) => {
-            if(answer.data.id){
+            if(answer.data){
                 await successHandlingRequests(type, 'post', body.name, answer.data.id, [body.name, category])
                 .then(async () => {
                     resolve(answer.data.id)
