@@ -9,8 +9,19 @@ function registerProduct(store_id, header, body, idHost){
             await successHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
         })
         .catch(async (error) => {
-            console.log(error)
-            await errorHandlingRequest('product', 'POST', idHost, null, error.response.data, body)
+            if(error.response){
+                await errorHandlingRequest('product', 'POST', idHost, null, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await registerProduct(store_id, header, body, idHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('product', 'POST', idHost, null, 'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
@@ -26,10 +37,23 @@ function putVariantsInProduct(store_id, header, body, idproduct, idProductHost){
             resolve(answer.data[0].id)
         })
         .catch(async (error) => {
-            await errorHandlingRequest('product', 'PUT', idProductHost, idproduct, error.response.data, body)
-            .then(() => {
-                reject()
-            })
+            if(error.response){
+                await errorHandlingRequest('product', 'PUT', idProductHost, idproduct, error.response.data, body)
+                .then(() => {
+                    reject()
+                })
+            }else{
+                setTimeout(async() => {
+                    await putVariantsInProduct(store_id, header, body, idproduct, idProductHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('product', 'PUT', idProductHost, idproduct, 'CONNECTION ERROR', body)
+                    }) 
+                }, 1500);
+            }
+            
         })
         .finally(() => {
             resolve()
@@ -45,7 +69,19 @@ function updateProduct(store_id, header, body, idproduct, idHost){
             await successHandlingRequests('product', 'update', idHost, idproduct, null)
         })
         .catch(async (error) => {
-            await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
+            if(error.response){
+                await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await updateProduct(store_id, header, body, idproduct, idHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('product', 'PUT', idHost, idproduct, 'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
@@ -61,7 +97,19 @@ function deleteProduct(store_id, header, body, idproduct, idHost){
             await successHandlingRequests('product', 'delete', idHost, idproduct, null)
         })
         .catch(async (error) => {
-            await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
+            if(error.response){
+                await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await deleteProduct(store_id, header, body, idproduct, idHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('product', 'DELETE', idHost, idproduct, 'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
@@ -77,7 +125,19 @@ function undeleteProduct(store_id, header, body, idproduct, idHost){
             await successHandlingRequests('product', 'undelete', idHost, idproduct, null)
         })
         .catch(async (error) => {
-            await errorHandlingRequest('product', 'UNDELETE', idHost, idproduct, error.response.data, body)
+            if(error.response){
+                await errorHandlingRequest('product', 'UNDELETE', idHost, idproduct, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await undeleteProduct(store_id, header, body, idproduct, idHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('product', 'UNDELETE', idHost,  'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
@@ -107,10 +167,22 @@ function registerCategory(store_id, header, body, type, category){
             
         })
         .catch(async (error) => {
-            await errorHandlingRequest(type, 'POST', body.name, null, error.response.data, body)
-            .then(() => {
-                resolve()
-            })
+            if(error.response){
+                await errorHandlingRequest(type, 'POST', body.name, null, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await registerCategory(store_id, header, body, type, category)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest(type, 'POST', body.name, null, 'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
+        })
+        .finally(() => {
+            resolve()
         })  
     })
 }
@@ -142,10 +214,26 @@ function getVariants(store_id, header, idproduct, idProductHost){
                 resolve(answer.data)
         })
         .catch(async (error) => {
-            await errorHandlingRequest('variation', 'GET', idProductHost, null, error.response.data, null)
-            .then(() => {
-                reject()
-            })
+            if(error.response){
+                await errorHandlingRequest('variation', 'GET', idProductHost, null, error.response.data, null)
+                .then(() => {
+                    reject()
+                })
+            }else{
+                setTimeout(async () => {
+                    await getVariants(store_id, header, idproduct, idProductHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('variation', 'GET', idProductHost, null, 'CONNECTION ERROR', null)
+                        .then(() => {
+                            reject()
+                        })
+                    })
+                }, 1500); 
+            }
+            
         })
         .finally(() => {
             resolve()
@@ -161,10 +249,19 @@ function registerVariation(store_id, header, body, idproduct, idProductHost){
             await successHandlingRequests('variation', 'post', idProductHost, answer.data.id, [body.values[0].pt])
         })
         .catch(async (error) => {
-            await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
-            .then(() => {
-                resolve()
-            })
+            if(error.response){
+                await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await registerVariation(store_id, header, body, idproduct, idProductHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('variation', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
@@ -185,7 +282,19 @@ function updateVariation(store_id, header, body, idproduct, idVariant, idProduct
             
         })
         .catch(async (error) => {
-            await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
+            if(error.response){
+                await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await updateVariation(store_id, header, body, idproduct, idVariant, idProductHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, 'CONNECTION ERROR', body)
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
@@ -202,32 +311,45 @@ function deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 
             await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
         })
         .catch(async (error) => {
-            if(error.response.data.description=="The last variant of a product cannot be deleted."){
-                await updateProduct(store_id, header, {"attributes": ["","",""]}, idproduct, idProductHost)
-                .then(async () => {
-                    await getVariants(store_id, header, idproduct, idProductHost)
-                    .then(async (response) => {
-                        response[0].values = []
-                        let bodyPutVariants = response
-                        await putVariantsInProduct(store_id, header, bodyPutVariants, idproduct, idProductHost)
+            if(error.response){
+                if(error.response.data.description=="The last variant of a product cannot be deleted."){
+                    await updateProduct(store_id, header, {"attributes": ["","",""]}, idproduct, idProductHost)
+                    .then(async () => {
+                        await getVariants(store_id, header, idproduct, idProductHost)
                         .then(async (response) => {
-                            await saveNewUniqueIdInProduct(idProductHost, response)
+                            response[0].values = []
+                            let bodyPutVariants = response
+                            await putVariantsInProduct(store_id, header, bodyPutVariants, idproduct, idProductHost)
+                            .then(async (response) => {
+                                await saveNewUniqueIdInProduct(idProductHost, response)
+                            })
+                        })
+                        .then(() => {
+    
                         })
                     })
-                    .then(() => {
-
+                    .then(async () => {
+                        await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
                     })
-                })
-                .then(async () => {
-                    await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
-                })
-                .catch(async () => {
+                    .catch(async () => {
+                        await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, error.response.data, null)
+                        resolve()
+                    })
+                }else{
                     await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, error.response.data, null)
-                    resolve()
-                })
+                }
             }else{
-                await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, error.response.data, null)
+                setTimeout(async () => {
+                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, nameVariant)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, 'CONNECTION ERROR', null)
+                    })
+                }, 1500); 
             }
+            
         })
         .finally(() => {
             resolve()
@@ -243,13 +365,20 @@ function uploadImage(store_id, body, idProductTray, idProductHost){
             await successHandlingRequests('image', 'post', idProductHost, null, null)
         })
         .catch(async (error) => {
-            console.log(`${url}/products/${idProductTray}/images/?access_token=${access_token}`)
-            console.log(body)
+            if(error.response){
+                await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await uploadImage(store_id, body, idProductTray, idProductHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
 
-            await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, body)
-            .then(() => {
-                resolve()
-            })
+                    })
+                }, 1500); 
+            }
         })
         .finally(() => {
             resolve()
