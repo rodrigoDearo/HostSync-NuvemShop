@@ -18,7 +18,11 @@ function registerProduct(store_id, header, body, idHost){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Register Product Loading...')
                         await errorHandlingRequest('product', 'POST', idHost, null, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -49,7 +53,11 @@ function putVariantsInProduct(store_id, header, body, idproduct, idProductHost){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Put Variants in Product Loading...')
                         await errorHandlingRequest('product', 'PUT', idProductHost, idproduct, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     }) 
                 }, 1500);
             }
@@ -78,7 +86,11 @@ function updateProduct(store_id, header, body, idproduct, idHost){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Update Product Loading...')
                         await errorHandlingRequest('product', 'PUT', idHost, idproduct, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -106,7 +118,12 @@ function deleteProduct(store_id, header, body, idproduct, idHost){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Delete Product Loading...')
+
                         await errorHandlingRequest('product', 'DELETE', idHost, idproduct, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -134,7 +151,12 @@ function undeleteProduct(store_id, header, body, idproduct, idHost){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Undelete Product Loading...')
+
                         await errorHandlingRequest('product', 'UNDELETE', idHost,  'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -176,7 +198,12 @@ function registerCategory(store_id, header, body, type, category){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Register Category Loading...')
+
                         await errorHandlingRequest(type, 'POST', body.name, null, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -258,7 +285,12 @@ function registerVariation(store_id, header, body, idproduct, idProductHost){
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Register Variation Loading...')
+
                         await errorHandlingRequest('variation', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -291,7 +323,12 @@ function updateVariation(store_id, header, body, idproduct, idVariant, idProduct
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Update Variation Loading...')
+
                         await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -345,7 +382,13 @@ function deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 
                         resolve()
                     })
                     .catch(async () => {
+                        console.log('Delete Variation Loading...')
+
+
                         await errorHandlingRequest('variation', 'DELETE', idProductHost, idVariant, 'CONNECTION ERROR', null)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
@@ -374,8 +417,12 @@ function uploadImage(store_id, body, idProductTray, idProductHost){
                         resolve()
                     })
                     .catch(async () => {
-                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
+                        console.log('Upload Image Loading...')
 
+                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
                     })
                 }, 1500); 
             }
