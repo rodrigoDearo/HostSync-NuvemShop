@@ -56,6 +56,15 @@ async function startSync(){
 }
 
 
+async function alignBase(){
+    await loadingPage(true)
+    await window.api.align()
+    .then(async () => {
+        await loadingPage(false)
+    })
+  //  alert(mensage)
+}
+
 
 
 

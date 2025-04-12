@@ -6,7 +6,7 @@ const { createDependencies, limparTabela } = require('./utils/dependenciesFDB.js
 const { copyJsonFilesToUserData, returnConfigToAccessDB, gravarLog, deleteErrorsRecords } = require('./utils/auxFunctions.js')
 const { requireAllProducts } = require('./utils/managerProducts.js')
 const { readNewRecords } = require('./utils/managerHostTableNotify.js');
-const { preparingGenerateToken } = require('./utils/preparingRequests.js')
+const { preparingGetProductsAndVariants, preparingGenerateToken } = require('./utils/preparingRequests.js')
 
 var win;
 
@@ -98,6 +98,16 @@ ipcMain.handle('startProgram', async () => {
 })
 
 
+ipcMain.handle('alignBase', async () => {
+  gravarLog(' . . . Aligning Base  . . .')
+
+  await alignBase()
+  .then((response) => {
+    return response
+  })
+})
+
+
 async function mainProcess(){
   return new Promise(async (resolve, reject) => {
     var config;
@@ -137,3 +147,9 @@ async function mainProcess(){
   })
 }
 
+
+async function alignBase(){
+  return new Promise(async (resolve, reject) => {
+    await preparingGetProductsAndVariants(99)
+  })
+}

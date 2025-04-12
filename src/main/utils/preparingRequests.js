@@ -1,6 +1,25 @@
-const { registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
+const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
+
+
+async function preparingGetProductsAndVariants(page){
+    return new Promise(async (resolve, reject) => {
+        let infosNuvem;
+
+        await returnHeaderandStoreID()
+        .then(async (response) => {
+            infosNuvem = response;
+        })
+        .then(async () => {
+            await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page)
+            .then(() => {
+                resolve();
+            })
+        }) 
+    })  
+}
+
 
 async function preparingPostProduct(product){
     return new Promise(async (resolve, reject) => {
@@ -279,6 +298,7 @@ async function returnHeaderandStoreID(){
 
 
 module.exports = {
+    preparingGetProductsAndVariants,
     preparingPostProduct,
     preparingUpdateProduct,
     preparingDeleteProduct,
