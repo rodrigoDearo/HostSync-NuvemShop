@@ -3,14 +3,67 @@ const fs = require ('fs')
 const path = require('node:path')
 const { app } = require('electron')
 
-const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
+const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { uploadOrDeleteImageImgur } = require('./managerImages.js')
+const { findProductKeyByIdNuvemShopAsync } = require('./auxFunctions.js')
 
 const userDataPath = 'src/build';
 //const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
+
+async function requireAllRegistersNuvem(index){
+    return new Promise(async (resolve, reject) => {
+        let i = index+1;
+        let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+        
+        await preparingGetProductsAndVariants()
+        .then(async (response) => {
+        /*  chamar função que utilize mesmo método de recursividade, para ler todos os produtos 
+            (e posteriormente das variantes do produto) verificar se existe na 
+            base de dados de alguma forma e deletar caso não exista o produto ou variante  */
+        })
+        .then(async () => {
+            requireAllRegistersNuvem(i)
+            .then(() => {
+                resolve()
+            })
+        })
+        .catch(async () => {
+            resolve()
+        })
+        
+    })
+}
+
+
+async function readingProductsOnPage(page, products, index){
+    return new Promise(async (resolve, reject) => {
+        let i = index+1;
+
+        if(page[i]){
+           await findProductKeyByIdNuvemShopAsync(products, page[i].id)
+           .then(async (response) => {
+                if(response){
+                    //verify variants
+                }else{
+                    //delete
+                }
+           })
+           .then(async () => {
+                await findProductKeyByIdNuvemShopAsync(page, products, index)
+                .then(() => {
+                    resolve()
+                })
+            })
+        }else{
+            resolve()
+        }
+
+    })
+}
+
 
 async function requireAllProducts(config){
     return new Promise(async(resolve, reject) => {
@@ -200,6 +253,7 @@ async function registerOrUpdateProduct(product){
 
 
 module.exports = {
+    requireAllRegistersNuvem,
     requireAllProducts,
     readingAllRecordProducts
 }

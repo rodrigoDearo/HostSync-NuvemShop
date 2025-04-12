@@ -4,9 +4,9 @@ const path = require('node:path')
 const { saveInfos, returnValueFromJson } = require('./utils/manageInfoUser.js')
 const { createDependencies, limparTabela } = require('./utils/dependenciesFDB.js')
 const { copyJsonFilesToUserData, returnConfigToAccessDB, gravarLog, deleteErrorsRecords } = require('./utils/auxFunctions.js')
-const { requireAllProducts } = require('./utils/managerProducts.js')
+const { requireAllRegistersNuvem, requireAllProducts } = require('./utils/managerProducts.js')
 const { readNewRecords } = require('./utils/managerHostTableNotify.js');
-const { preparingGetProductsAndVariants, preparingGenerateToken } = require('./utils/preparingRequests.js')
+const { preparingGenerateToken } = require('./utils/preparingRequests.js')
 
 var win;
 
@@ -150,6 +150,6 @@ async function mainProcess(){
 
 async function alignBase(){
   return new Promise(async (resolve, reject) => {
-    await preparingGetProductsAndVariants(99)
+    await requireAllRegistersNuvem(0)
   })
 }

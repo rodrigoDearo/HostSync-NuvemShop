@@ -11,6 +11,34 @@ const userDataPath = 'src/build';
 //const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
+
+async function readingVariantOnProductsOnPage(variantsInProduct, products, index){
+    return new Promise(async (resolve, reject) => {
+        let i = index+1;
+
+        if(page[i]){
+           await findProductKeyByIdNuvemShopAsync(products, page[i].id)
+           .then(async (response) => {
+                if(response){
+                    //verify variants
+                }else{
+                    //delete
+                }
+           })
+           .then(async () => {
+                await findProductKeyByIdNuvemShopAsync(page, products, index)
+                .then(() => {
+                    resolve()
+                })
+            })
+        }else{
+            resolve()
+        }
+
+    })
+}
+
+
 async function requireAllVariationsOfAProduct(idProduct){
     return new Promise(async(resolve, reject) => {
         try {
