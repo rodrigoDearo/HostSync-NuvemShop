@@ -1,303 +1,120 @@
-const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
-const { returnValueFromJson } = require('./manageInfoUser');
-const { returnInfo } = require('../envManager');
-
-
-async function preparingGetProductsAndVariants(page){
-    return new Promise(async (resolve, reject) => {
-        let infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-        })
-        .then(async () => {
-            await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })  
-}
-
-
-async function preparingPostProduct(product){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            body = product
-        })
-        .then(async () => {
-            let idHost = body.codigo
-            delete body.codigo
-            await registerProduct(infosNuvem[0], infosNuvem[1], body, idHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })  
-}
-
-
-async function preparingUpdateProduct(idproduct, product){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            body = product
-        })
-        .then(async () => {
-            let idHost = body.codigo
-            delete body.codigo
-            delete body.attributes
-            await updateProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })
-}
-
-
-async function preparingDeleteProduct(idHost, idproduct, product){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            delete product.codigo;
-            delete body.attributes
-            product.published = false
-            body = product
-        })
-        .then(async () => {
-            await deleteProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })
-}
-
-
-async function preparingUndeleteProduct(idHost, idproduct, product){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            delete product.codigo;
-            delete product.attributes
-            product.published = true
-            body = product
-        })
-        .then(async () => {
-            await undeleteProduct(infosNuvem[0], infosNuvem[1], body, idproduct, idHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })
-}
-
-
-//
-
-
-
-async function preparingPostCategory(category){
-    return new Promise(async (resolve, reject) => {
-        let infosNuvem;
-        let body = {
-            "name": category 
-          }
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-        })
-        .then(async () => {
-            await registerCategory(infosNuvem[0], infosNuvem[1], body, 'category', category)
-            .then((id) => {
-                resolve(id ?? null)
-            })
-        }) 
-    })  
-}
-
-
-async function preparingPostSubCategory(category, subcategory, category_id){
-    return new Promise(async (resolve, reject) => {
-        let infosNuvem;
-        let body = {
-                "name": subcategory,
-                "parent": category_id
-          }
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-        })
-        .then(async () => {
-            await registerCategory(infosNuvem[0], infosNuvem[1], body, 'subcategory', category)
-            .then((id) => {
-                resolve(id ?? null)
-            })
-        }) 
-    })  
-}
-
-
-async function preparingPostVariation(variant, idProduct, idProductHost){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            body = variant
-        })
-        .then(async () => {
-            delete body.codigo
-            await registerVariation(infosNuvem[0], infosNuvem[1], body, idProduct, idProductHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })  
-}
-
-
-async function preparingUpdateVariation(variant, idVariant, idProduct, idProductHost){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            body = variant
-            delete body.codigo
-        })
-        .then(async () => {
-            await updateVariation(infosNuvem[0], infosNuvem[1], body, idProduct, idVariant, idProductHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })
-}
-
-
-async function preparingDeleteVariation(idVariant, idProduct, idProductHost, grade){
-    return new Promise(async (resolve, reject) => {
-        let infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-        })
-        .then(async () => {
-            await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })
-}
-
-
-async function preparingUploadImage(image, idProductTray, idProductHost){
-    return new Promise(async (resolve, reject) => {
-        let body, infosNuvem;
-
-        await returnHeaderandStoreID()
-        .then(async (response) => {
-            infosNuvem = response;
-            body = {
-                "Images":  {
-                     "picture_source_1":image,
-                 }
-             }
-        })
-        .then(async () => {
-            await uploadImage(infosNuvem[0], infosNuvem[1], body, idProductTray, idProductHost)
-            .then(() => {
-                resolve();
-            })
-        }) 
-    })  
-}
-
-
-async function preparingGenerateToken(code){
-    return new Promise(async (resolve, reject) => {
-        let client_secret;
-        let client_id;
-        let body;
-
-        await returnInfo('client_secret')
-        .then(async (response) => {
-            client_secret = response;
-            client_id = await returnInfo('client_id')
-        })
-        .then(async () => {
-            body = {
-                "client_id": client_id,
-                "client_secret": client_secret,
-                "grant_type": "authorization_code",
-                "code": code
-            }
-        }) 
-        .then(async () => {
-            await generateToken(body)
-            .then(response => {
-                resolve(response)
-            })
-        })
-    })
-}
-
-
-async function returnHeaderandStoreID(){
-    return new Promise(async (resolve, reject) => {
-        let storeid, access_token, config;
-
-        let cli_id = await returnInfo('client_id')
-        await returnValueFromJson('tokennuvemshop')
-        .then(async accessNuvem => {
-            access_token = accessNuvem
-            await returnValueFromJson('storeidnuvemshop')
-            .then(async storeidNuvem => {
-                storeid = storeidNuvem
-            })
-            .then(async () => {
-                config = {
-                    headers: {
-                        'Authentication':`bearer ${access_token}`,
-                        'User-Agent':`HostSync (${cli_id})`,
-                        'Content-Type':'application/json'
-                    }
-                }   
-            })
-            .then(() => {
-                resolve([storeid, config])
-            })
-        })
-
-    })
-}
-
-
-
-
-
-module.exports = {
+const {
+    getProductsAndVariants, registerProduct, updateProduct, deleteProduct, undeleteProduct,
+    registerCategory, deleteCategory, getVariants, registerVariation, updateVariation,
+    deleteVariation, uploadImagem, generateToken
+  } = require('./requestsNuvemShop');
+  const { returnValueFromJson } = require('./manageInfoUser');
+  const { returnInfo } = require('../envManager');
+  
+  async function getHeaderAndStore() {
+    const cli_id = await returnInfo('client_id');
+    const access_token = await returnValueFromJson('tokennuvemshop');
+    const storeid = await returnValueFromJson('storeidnuvemshop');
+  
+    const config = {
+      headers: {
+        'Authentication': `bearer ${access_token}`,
+        'User-Agent': `HostSync (${cli_id})`,
+        'Content-Type': 'application/json',
+      },
+    };
+  
+    return [storeid, config];
+  }
+  
+  async function preparingGetProductsAndVariants(page) {
+    const infosNuvem = await getHeaderAndStore();
+    await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page);
+  }
+  
+  async function preparingPostProduct(product) {
+    const infosNuvem = await getHeaderAndStore();
+    const idHost = product.codigo;
+    delete product.codigo;
+    await registerProduct(infosNuvem[0], infosNuvem[1], product, idHost);
+  }
+  
+  async function preparingUpdateProduct(idproduct, product) {
+    const infosNuvem = await getHeaderAndStore();
+    const idHost = product.codigo;
+    delete product.codigo;
+    delete product.attributes;
+    await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+  }
+  
+  async function preparingDeleteProduct(idHost, idproduct, product) {
+    const infosNuvem = await getHeaderAndStore();
+    delete product.codigo;
+    delete product.attributes;
+    product.published = false;
+    await deleteProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+  }
+  
+  async function preparingUndeleteProduct(idHost, idproduct, product) {
+    const infosNuvem = await getHeaderAndStore();
+    delete product.codigo;
+    delete product.attributes;
+    product.published = true;
+    await undeleteProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+  }
+  
+  async function preparingPostCategory(category) {
+    const infosNuvem = await getHeaderAndStore();
+    const body = { name: category };
+    const id = await registerCategory(infosNuvem[0], infosNuvem[1], body, 'category', category);
+    return id ?? null;
+  }
+  
+  async function preparingPostSubCategory(category, subcategory, category_id) {
+    const infosNuvem = await getHeaderAndStore();
+    const body = {
+      name: subcategory,
+      parent: category_id,
+    };
+    const id = await registerCategory(infosNuvem[0], infosNuvem[1], body, 'subcategory', category);
+    return id ?? null;
+  }
+  
+  async function preparingPostVariation(variant, idProduct, idProductHost) {
+    const infosNuvem = await getHeaderAndStore();
+    delete variant.codigo;
+    await registerVariation(infosNuvem[0], infosNuvem[1], variant, idProduct, idProductHost);
+  }
+  
+  async function preparingUpdateVariation(variant, idVariant, idProduct, idProductHost) {
+    const infosNuvem = await getHeaderAndStore();
+    delete variant.codigo;
+    await updateVariation(infosNuvem[0], infosNuvem[1], variant, idProduct, idVariant, idProductHost);
+  }
+  
+  async function preparingDeleteVariation(idVariant, idProduct, idProductHost, grade) {
+    const infosNuvem = await getHeaderAndStore();
+    await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade);
+  }
+  
+  async function preparingUploadImage(image, idProductTray, idProductHost) {
+    const infosNuvem = await getHeaderAndStore();
+    const body = {
+      Images: {
+        picture_source_1: image,
+      },
+    };
+    await uploadImage(infosNuvem[0], infosNuvem[1], body, idProductTray, idProductHost);
+  }
+  
+  async function preparingGenerateToken(code) {
+    const client_secret = await returnInfo('client_secret');
+    const client_id = await returnInfo('client_id');
+    const body = {
+      client_id,
+      client_secret,
+      grant_type: 'authorization_code',
+      code,
+    };
+    return await generateToken(body);
+  }
+  
+  module.exports = {
     preparingGetProductsAndVariants,
     preparingPostProduct,
     preparingUpdateProduct,
@@ -309,5 +126,6 @@ module.exports = {
     preparingUpdateVariation,
     preparingDeleteVariation,
     preparingUploadImage,
-    preparingGenerateToken
-}
+    preparingGenerateToken,
+  };
+  
