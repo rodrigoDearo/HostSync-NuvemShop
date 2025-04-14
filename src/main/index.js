@@ -102,9 +102,7 @@ ipcMain.handle('alignBase', async () => {
   gravarLog(' . . . Aligning Base  . . .')
 
   await alignBase()
-  .then((response) => {
-    return response
-  })
+  return
 })
 
 
@@ -151,5 +149,8 @@ async function mainProcess(){
 async function alignBase(){
   return new Promise(async (resolve, reject) => {
     await requireAllRegistersNuvem(0)
+    .then(async () => {
+      console.log('terminado')
+    })
   })
 }

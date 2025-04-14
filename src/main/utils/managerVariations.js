@@ -192,5 +192,5 @@ async function deleteUnlistedVariations(product, idHost, arrayVariations) {
 }
 
 module.exports = {
-    requireAllVariationsOfAProduct,
+    requireAllVariationsOfAProduct
 }

@@ -1,10 +1,6 @@
-const {
-    getProductsAndVariants, registerProduct, updateProduct, deleteProduct, undeleteProduct,
-    registerCategory, deleteCategory, getVariants, registerVariation, updateVariation,
-    deleteVariation, uploadImagem, generateToken
-  } = require('./requestsNuvemShop');
-  const { returnValueFromJson } = require('./manageInfoUser');
-  const { returnInfo } = require('../envManager');
+const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, deleteProductPermanent, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImagem, generateToken } = require('./requestsNuvemShop');
+const { returnValueFromJson } = require('./manageInfoUser');
+const { returnInfo } = require('../envManager');
   
   async function getHeaderAndStore() {
     const cli_id = await returnInfo('client_id');
@@ -24,7 +20,8 @@ const {
   
   async function preparingGetProductsAndVariants(page) {
     const infosNuvem = await getHeaderAndStore();
-    await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page);
+    let result = await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page);
+    return result
   }
   
   async function preparingPostProduct(product) {
@@ -48,6 +45,11 @@ const {
     delete product.attributes;
     product.published = false;
     await deleteProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+  }
+
+  async function preparingDeletePermanentProduct(idproduct) {
+    const infosNuvem = await getHeaderAndStore();
+    await deleteProductPermanent(infosNuvem[0], infosNuvem[1], idproduct);
   }
   
   async function preparingUndeleteProduct(idHost, idproduct, product) {
@@ -91,7 +93,14 @@ const {
     const infosNuvem = await getHeaderAndStore();
     await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade);
   }
-  
+
+  /*
+  async function preparingDeletePermanentVariant(idproduct, idvariant) {
+    const infosNuvem = await getHeaderAndStore();
+    await deleteVariation(infosNuvem[0], infosNuvem[1], idproduct, idvariant);
+  }
+  */
+
   async function preparingUploadImage(image, idProductTray, idProductHost) {
     const infosNuvem = await getHeaderAndStore();
     const body = {
@@ -119,6 +128,7 @@ const {
     preparingPostProduct,
     preparingUpdateProduct,
     preparingDeleteProduct,
+    preparingDeletePermanentProduct,
     preparingUndeleteProduct,
     preparingPostCategory,
     preparingPostSubCategory,

@@ -3,11 +3,11 @@ const fs = require ('fs')
 const path = require('node:path')
 const { app } = require('electron')
 
-const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
+const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingDeletePermanentProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { uploadOrDeleteImageImgur } = require('./managerImages.js')
-const { findProductKeyByIdNuvemShopAsync } = require('./auxFunctions.js')
+const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js')
 
 const userDataPath = 'src/build';
 //const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
@@ -18,11 +18,9 @@ async function requireAllRegistersNuvem(index){
         let i = index+1;
         let productsDB = JSON.parse(fs.readFileSync(pathProducts))
         
-        await preparingGetProductsAndVariants()
+        await preparingGetProductsAndVariants(i)
         .then(async (response) => {
-        /*  chamar função que utilize mesmo método de recursividade, para ler todos os produtos 
-            (e posteriormente das variantes do produto) verificar se existe na 
-            base de dados de alguma forma e deletar caso não exista o produto ou variante  */
+            await readingProductsOnPage(response, productsDB, 0)
         })
         .then(async () => {
             requireAllRegistersNuvem(i)
@@ -41,21 +39,24 @@ async function requireAllRegistersNuvem(index){
 async function readingProductsOnPage(page, products, index){
     return new Promise(async (resolve, reject) => {
         let i = index+1;
-
         if(page[i]){
            await findProductKeyByIdNuvemShopAsync(products, page[i].id)
            .then(async (response) => {
+            console.log(`LENDO PRODUCT: ${page[i].name.pt} COM RESPONSE: ${response}`)
+
                 if(response){
-                    //verify variants
+                   // verifyVariants
                 }else{
-                    //delete
+                    await preparingDeletePermanentProduct(page[i].id)
                 }
            })
            .then(async () => {
-                await findProductKeyByIdNuvemShopAsync(page, products, index)
-                .then(() => {
-                    resolve()
-                })
+                setTimeout(async () => {
+                    await readingProductsOnPage(page, products, index)
+                    .then(() => {
+                        resolve()
+                    })
+                }, 2000);
             })
         }else{
             resolve()

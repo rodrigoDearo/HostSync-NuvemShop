@@ -1,15 +1,19 @@
 const axios = require('axios');
-const { successHandlingRequests, errorHandlingRequest, saveNewUniqueIdInProduct } = require('./auxFunctions');
+const { successHandlingRequests, errorHandlingRequest, saveNewUniqueIdInProduct, gravarLog } = require('./auxFunctions');
 
 
 async function getProductsAndVariants(store_id, header, page){
     return new Promise(async (resolve, reject) => {
         await axios.get(`https://api.nuvemshop.com.br/v1/${store_id}/products?page=${page}`, header)
         .then(async (answer) => {
-            console.log(answer.data[0])
+            resolve(answer.data)
         })
         .catch(async (error) => {
-            console.log(error.response.data)
+            if(error.response.data.code==404){
+                reject()
+            }else{
+                console.log(error.response.data)
+            }
         })
     })
 }
@@ -134,6 +138,39 @@ async function deleteProduct(store_id, header, body, idproduct, idHost){
                         console.log('Delete Product Loading...')
 
                         await errorHandlingRequest('product', 'DELETE', idHost, idproduct, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
+                    })
+                }, 1500); 
+            }
+        })
+        .finally(() => {
+            resolve()
+        })    
+    })
+}
+
+
+async function deleteProductPermanent(store_id, header, idproduct){
+    return new Promise(async (resolve, reject) => {
+        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, header)
+        .then(async () => {
+            gravarLog('DELETADO PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
+        })
+        .catch(async (error) => {
+            if(error.response){
+                gravarLog('ERRO AO DELETAR PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
+            }else{
+                setTimeout(async () => {
+                    await deleteProductPermanent(store_id, header, idproduct)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        console.log('Delete Product Permanent Loading...')
+
+                        await errorHandlingRequest('product', 'DELETEPERMANENT', null, idproduct, 'CONNECTION ERROR', body)
                         .then(async () => {
                             resolve()
                         })
@@ -488,6 +525,7 @@ module.exports = {
     registerProduct,
     updateProduct,
     deleteProduct,
+    deleteProductPermanent,
     undeleteProduct,
     registerCategory,
     //deleteCategory,
