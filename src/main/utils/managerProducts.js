@@ -13,10 +13,14 @@ const userDataPath = 'src/build';
 //const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
+var produtosDeletados = 0
+
+
 async function requireAllRegistersNuvem(index){
+    let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+
     return new Promise(async (resolve, reject) => {
         let i = index+1;
-        let productsDB = JSON.parse(fs.readFileSync(pathProducts))
         
         await preparingGetProductsAndVariants(i)
         .then(async (response) => {
@@ -25,7 +29,7 @@ async function requireAllRegistersNuvem(index){
         .then(async () => {
             requireAllRegistersNuvem(i)
             .then(() => {
-                resolve()
+                resolve(produtosDeletados)
             })
         })
         .catch(async () => {
@@ -39,20 +43,23 @@ async function requireAllRegistersNuvem(index){
 async function readingProductsOnPage(page, products, index){
     return new Promise(async (resolve, reject) => {
         let i = index+1;
-        if(page[i]){
-           await findProductKeyByIdNuvemShopAsync(products, page[i].id)
+        if(page[index]){
+           await findProductKeyByIdNuvemShopAsync(products, page[index].id)
            .then(async (response) => {
-            console.log(`LENDO PRODUCT: ${page[i].name.pt} COM RESPONSE: ${response}`)
+            console.log(`LENDO PRODUCT: ${page[index].name.pt} COM RESPONSE: ${response}`)
 
                 if(response){
                    // verifyVariants
                 }else{
-                    await preparingDeletePermanentProduct(page[i].id)
+                    await preparingDeletePermanentProduct(page[index].id)
+                    .then(() => {
+                        produtosDeletados++;
+                    })
                 }
            })
            .then(async () => {
                 setTimeout(async () => {
-                    await readingProductsOnPage(page, products, index)
+                    await readingProductsOnPage(page, products, i)
                     .then(() => {
                         resolve()
                     })

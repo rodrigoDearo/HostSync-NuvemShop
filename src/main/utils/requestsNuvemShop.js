@@ -9,7 +9,7 @@ async function getProductsAndVariants(store_id, header, page){
             resolve(answer.data)
         })
         .catch(async (error) => {
-            if(error.response.data.code==404){
+            if(error.response.data.code=='404'){
                 reject()
             }else{
                 console.log(error.response.data)
@@ -159,6 +159,7 @@ async function deleteProductPermanent(store_id, header, idproduct){
             gravarLog('DELETADO PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
         })
         .catch(async (error) => {
+            console.log(error.response.data)
             if(error.response){
                 gravarLog('ERRO AO DELETAR PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
             }else{

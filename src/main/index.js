@@ -101,8 +101,8 @@ ipcMain.handle('startProgram', async () => {
 ipcMain.handle('alignBase', async () => {
   gravarLog(' . . . Aligning Base  . . .')
 
-  await alignBase()
-  return
+  let numeroProdutosDeletados = await alignBase()
+  return numeroProdutosDeletados
 })
 
 
@@ -149,8 +149,8 @@ async function mainProcess(){
 async function alignBase(){
   return new Promise(async (resolve, reject) => {
     await requireAllRegistersNuvem(0)
-    .then(async () => {
-      console.log('terminado')
+    .then(async (produtos) => {
+      resolve(produtos)
     })
   })
 }

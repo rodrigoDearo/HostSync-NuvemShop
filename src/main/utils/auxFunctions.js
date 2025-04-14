@@ -284,15 +284,13 @@ async function getActualDatetime(){
 }
 
 
-function findProductKeyByIdNuvemShopAsync(data, idToFind) {
-  return new Promise((resolve) => {
-    for (const [key, product] of Object.entries(data)) {
-      if (product.idNuvemShop === idToFind) {
-        return resolve(key);
-      }
+async function findProductKeyByIdNuvemShopAsync(data, idToFind) {
+  for (const [key, product] of Object.entries(data)) {
+    if (product.idNuvemShop == idToFind) {
+      return key;
     }
-    resolve(null);
-  });
+  }
+  return null;
 }
 
 
