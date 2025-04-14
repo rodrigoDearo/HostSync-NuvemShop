@@ -60,11 +60,8 @@ async function alignBase(){
     await loadingPage(true)
     await window.api.align()
     .then(async (quantidade) => {
-        event.preventDefault
-
         await loadingPage(false)
         showSuccessPopup(`Deletado ${quantidade} Produtos cadastrados apenas na NuvemShop`)
-
     })
   //  alert(mensage)
 }

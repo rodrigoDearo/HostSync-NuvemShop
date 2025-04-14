@@ -9,8 +9,11 @@ async function getProductsAndVariants(store_id, header, page){
             resolve(answer.data)
         })
         .catch(async (error) => {
-            if(error.response.data.code=='404'){
-                reject()
+            if(error.response.data.code==404){
+                resolve(null)
+            }else
+            if(error.response.data.code==429){
+                resolve(null)
             }else{
                 console.log(error.response.data)
             }

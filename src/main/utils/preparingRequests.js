@@ -20,7 +20,7 @@ const { returnInfo } = require('../envManager');
   
   async function preparingGetProductsAndVariants(page) {
     const infosNuvem = await getHeaderAndStore();
-    let result = await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page);
+    let result = await getProductsAndVariants(infosNuvem[0], infosNuvem[1], page)
     return result
   }
   

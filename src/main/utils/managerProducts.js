@@ -18,19 +18,27 @@ var produtosDeletados = 0
 
 async function requireAllRegistersNuvem(index){
     let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+    let finish = false
 
     return new Promise(async (resolve, reject) => {
         let i = index+1;
         
         await preparingGetProductsAndVariants(i)
         .then(async (response) => {
-            await readingProductsOnPage(response, productsDB, 0)
+            if(response){
+                await readingProductsOnPage(response, productsDB, 0)
+            }else{
+                finish = true;
+                resolve(produtosDeletados)
+            }
         })
         .then(async () => {
-            requireAllRegistersNuvem(i)
-            .then(() => {
-                resolve(produtosDeletados)
-            })
+            if(!finish){
+                requireAllRegistersNuvem(i)
+            }
+        })
+        .then(() => {
+            resolve(produtosDeletados)
         })
         .catch(async () => {
             resolve()
