@@ -3,14 +3,83 @@ const fs = require ('fs')
 const path = require('node:path')
 const { app } = require('electron')
 
-const { preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
+const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingDeletePermanentProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { uploadOrDeleteImageImgur } = require('./managerImages.js')
+const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js')
 
 //const userDataPath = 'src/build';
 const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
+
+var produtosDeletados = 0
+
+
+async function requireAllRegistersNuvem(index){
+    let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+    let finish = false
+
+    return new Promise(async (resolve, reject) => {
+        let i = index+1;
+        
+        await preparingGetProductsAndVariants(i)
+        .then(async (response) => {
+            if(response){
+                await readingProductsOnPage(response, productsDB, 0)
+            }else{
+                finish = true;
+                resolve(produtosDeletados)
+            }
+        })
+        .then(async () => {
+            if(!finish){
+                requireAllRegistersNuvem(i)
+            }
+        })
+        .then(() => {
+            resolve(produtosDeletados)
+        })
+        .catch(async () => {
+            resolve()
+        })
+        
+    })
+}
+
+
+async function readingProductsOnPage(page, products, index){
+    return new Promise(async (resolve, reject) => {
+        let i = index+1;
+        if(page[index]){
+           await findProductKeyByIdNuvemShopAsync(products, page[index].id)
+           .then(async (response) => {
+            console.log(`LENDO PRODUCT: ${page[index].name.pt} COM RESPONSE: ${response}`)
+
+                if(response){
+                   // verifyVariants
+                }else{
+                    await preparingDeletePermanentProduct(page[index].id)
+                    .then(() => {
+                        produtosDeletados++;
+                    })
+                }
+           })
+           .then(async () => {
+                setTimeout(async () => {
+                    await readingProductsOnPage(page, products, i)
+                    .then(() => {
+                        resolve()
+                    })
+                }, 2000);
+            })
+        }else{
+            resolve()
+        }
+
+    })
+}
+
 
 async function requireAllProducts(config){
     return new Promise(async(resolve, reject) => {
@@ -200,6 +269,7 @@ async function registerOrUpdateProduct(product){
 
 
 module.exports = {
+    requireAllRegistersNuvem,
     requireAllProducts,
     readingAllRecordProducts
 }

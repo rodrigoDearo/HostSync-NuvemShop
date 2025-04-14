@@ -284,6 +284,15 @@ async function getActualDatetime(){
 }
 
 
+async function findProductKeyByIdNuvemShopAsync(data, idToFind) {
+  for (const [key, product] of Object.entries(data)) {
+    if (product.idNuvemShop == idToFind) {
+      return key;
+    }
+  }
+  return null;
+}
+
 
 function copyJsonFilesToUserData() {
   // Caminho correto onde os arquivos são empacotados
@@ -322,6 +331,7 @@ function copyJsonFilesToUserData() {
 
 
 module.exports = {
+    findProductKeyByIdNuvemShopAsync,
     copyJsonFilesToUserData,
     returnConfigToAccessDB,
     successHandlingRequests,

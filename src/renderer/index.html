@@ -10,6 +10,13 @@
     <script src="./assets/renderer.js"></script>
 </head>
 <body>
+    <div id="successPopup" class="popup">
+        <div class="popup-content">
+          <span class="checkmark">✔</span>
+          <p id="textPopup"></p>
+        </div>
+      </div>
+
     <div id="background-loading"></div>
     <img src="" id="gif-loading" type="gif"> 
 
@@ -52,6 +59,7 @@
 
         <form class="container col-5" id="formularioFull">
             <button type="button" id="botaoStart" onclick="startSync()" class="btn btn-primary sync container botao-save mb-2">Iniciar Sincronização</button>
+            <button type="button" id="botaoSinc" onclick="alignBase()" class="btn btn-primary sync container botao-save mb-2">Alinhar Produtos e Variantes</button>
         </form>
     </div>
 

@@ -7,7 +7,8 @@ const WINDOW_API = {
     saveHost: (pathdb) => ipcRenderer.invoke('saveInfoHost', pathdb),
     saveNuvemShop: (code) => ipcRenderer.invoke('saveInfoNuvemShop', code),
     getInfoUser: (field) => ipcRenderer.invoke('getInfoUser', field),
-    start: () => ipcRenderer.invoke('startProgram')
+    start: () => ipcRenderer.invoke('startProgram'),
+    align: () => ipcRenderer.invoke('alignBase')
 }
 
 contextBridge.exposeInMainWorld('api', WINDOW_API)

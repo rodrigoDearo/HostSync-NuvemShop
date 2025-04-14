@@ -33,7 +33,7 @@ async function saveInfoNuvemShop(){
     let success = await window.api.saveNuvemShop(code)
     
     if(success){
-        showSuccessPopup()
+        showSuccessPopup('Dados salvos com sucesso!')
         document.getElementById('saveNuvemShop').disabled = true  
         document.getElementById('code-input').disabled = true;
         document.getElementById('code-input').style.border = "2px solid green"
@@ -55,6 +55,16 @@ async function startSync(){
   //  alert(mensage)
 }
 
+
+async function alignBase(){
+    await loadingPage(true)
+    await window.api.align()
+    .then(async (quantidade) => {
+        await loadingPage(false)
+        showSuccessPopup(`Deletado ${quantidade} Produtos cadastrados apenas na NuvemShop`)
+    })
+  //  alert(mensage)
+}
 
 
 
@@ -84,11 +94,14 @@ async function loadingPage(status){
 }
 
 
-function showSuccessPopup() {
+function showSuccessPopup(message) {
     const popup = document.getElementById("successPopup");
+    const text = document.getElementById('textPopup')
+    text.innerHTML = message
     popup.classList.add("show");
   
     setTimeout(() => {
+      text.innerHTML = ''
       popup.classList.remove("show");
     }, 2000); // Fecha após 3 segundos
   }

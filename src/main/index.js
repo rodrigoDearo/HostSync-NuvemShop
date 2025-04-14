@@ -4,7 +4,7 @@ const path = require('node:path')
 const { saveInfos, returnValueFromJson } = require('./utils/manageInfoUser.js')
 const { createDependencies, limparTabela } = require('./utils/dependenciesFDB.js')
 const { copyJsonFilesToUserData, returnConfigToAccessDB, gravarLog, deleteErrorsRecords } = require('./utils/auxFunctions.js')
-const { requireAllProducts } = require('./utils/managerProducts.js')
+const { requireAllRegistersNuvem, requireAllProducts } = require('./utils/managerProducts.js')
 const { readNewRecords } = require('./utils/managerHostTableNotify.js');
 const { preparingGenerateToken } = require('./utils/preparingRequests.js')
 
@@ -98,6 +98,14 @@ ipcMain.handle('startProgram', async () => {
 })
 
 
+ipcMain.handle('alignBase', async () => {
+  gravarLog(' . . . Aligning Base  . . .')
+
+  let numeroProdutosDeletados = await alignBase()
+  return numeroProdutosDeletados
+})
+
+
 async function mainProcess(){
   return new Promise(async (resolve, reject) => {
     var config;
@@ -137,3 +145,12 @@ async function mainProcess(){
   })
 }
 
+
+async function alignBase(){
+  return new Promise(async (resolve, reject) => {
+    await requireAllRegistersNuvem(0)
+    .then(async (produtos) => {
+      resolve(produtos)
+    })
+  })
+}
