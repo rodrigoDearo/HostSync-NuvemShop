@@ -89,9 +89,9 @@ const { returnInfo } = require('../envManager');
     await updateVariation(infosNuvem[0], infosNuvem[1], variant, idProduct, idVariant, idProductHost);
   }
   
-  async function preparingDeleteVariation(idVariant, idProduct, idProductHost, grade) {
+  async function preparingDeleteVariation(idVariant, idProduct, idProductHost, grade, stockProduct) {
     const infosNuvem = await getHeaderAndStore();
-    await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade);
+    await deleteVariation(infosNuvem[0], infosNuvem[1], idProduct, idVariant, idProductHost, grade, stockProduct);
   }
 
   /*

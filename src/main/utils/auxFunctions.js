@@ -265,7 +265,7 @@ async function saveNewUniqueIdInProduct(idHost, id){
   return new Promise(async (resolve, reject) => {
     let productsDB = JSON.parse(fs.readFileSync(pathProducts))
 
-    productsDB[`${idHost}`].UniqueId = id
+    productsDB[`${idHost}`].UniqueId = `${id}`
 
     fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
     resolve()

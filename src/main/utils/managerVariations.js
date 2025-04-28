@@ -40,7 +40,7 @@ async function readingVariantOnProductsOnPage(variantsInProduct, products, index
 }
 
 
-async function requireAllVariationsOfAProduct(idProduct){
+async function requireAllVariationsOfAProduct(idProduct, stockProduct){
     return new Promise(async(resolve, reject) => {
         try {
         variationsModificateds = []
@@ -69,13 +69,13 @@ async function requireAllVariationsOfAProduct(idProduct){
                             LEFT JOIN GRADE G ON PG.ID_GRADE = G.ID
                             WHERE PG.ID_PRODUTO='${idProduct}'
                             AND G.GRADE!='null'
-                            AND PG.ESTOQUE > 0;;`;
+                            AND PG.ESTOQUE > 0;`;
   
             db.query(codigoSQL, async function (err, result){
                 if (err)
                     resolve({code: 500, msg:'ERRO AO CONSULTAR TABELA VARIACOES, CONTATAR SUPORTE TECNICO'});
                 
-                await readingAllRecordVariations(result, 0, idProduct)
+                await readingAllRecordVariations(result, 0, idProduct, stockProduct)
                 .then(() => {
                     resolve({code: 200, msg:'VARIACOES CONSULTADAS COM SUCESSO'});
                 })
@@ -92,23 +92,23 @@ async function requireAllVariationsOfAProduct(idProduct){
 }
 
 
-async function readingAllRecordVariations(variationsRecords, index, idProdutoHost){
+async function readingAllRecordVariations(variationsRecords, index, idProdutoHost, stockProduct){
     return new Promise(async (resolve, reject) => {
         let productsDB = JSON.parse(fs.readFileSync(pathProducts))
 
         let record = variationsRecords[index]
         let i = index + 1;
 
-
         if(i > variationsRecords.length){
             if(productsDB[`${idProdutoHost}`]){
-                await deleteUnlistedVariations(productsDB[`${idProdutoHost}`], idProdutoHost, variationsModificateds)
+                await deleteUnlistedVariations(productsDB[`${idProdutoHost}`], idProdutoHost, variationsModificateds, stockProduct)
                 .then(async () => {
                     resolve()
                 })
             }else{
                 resolve()
             }
+
         }
         else{
             let variant = {
@@ -127,7 +127,7 @@ async function readingAllRecordVariations(variationsRecords, index, idProdutoHos
                 await registerUpdateOrDeleteVariant(variant)
                 .then(async() => {
                     setTimeout(async () => {
-                        await readingAllRecordVariations(variationsRecords, i, idProdutoHost)
+                        await readingAllRecordVariations(variationsRecords, i, idProdutoHost, stockProduct)
                         .then(() => {
                             resolve()
                         })
@@ -172,7 +172,7 @@ async function registerUpdateOrDeleteVariant(variant){
 }
 
 
-async function deleteUnlistedVariations(product, idHost, arrayVariations) {
+async function deleteUnlistedVariations(product, idHost, arrayVariations, stockProduct) {
     return new Promise(async (resolve, reject) => {
         let idProductNuvem = product.idNuvemShop;
         let variations = product.variations;
@@ -183,7 +183,7 @@ async function deleteUnlistedVariations(product, idHost, arrayVariations) {
 
         for (const [grade, idVariation] of Object.entries(variations)) {
             setTimeout(async () => {
-                await preparingDeleteVariation(idVariation, idProductNuvem, idHost, grade)
+                await preparingDeleteVariation(idVariation, idProductNuvem, idHost, grade, stockProduct)
             }, 1000);
         }
         

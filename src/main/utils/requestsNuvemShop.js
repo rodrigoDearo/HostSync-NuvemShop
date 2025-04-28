@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { successHandlingRequests, errorHandlingRequest, saveNewUniqueIdInProduct, gravarLog } = require('./auxFunctions');
+const { parse } = require('dotenv');
 
 
 async function getProductsAndVariants(store_id, header, page){
@@ -370,7 +371,7 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
         .catch(async (error) => {
             if(error.response){
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
-                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO') 
+                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO', 0) 
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
@@ -400,7 +401,7 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
 
 
 
-async function deleteVariation(store_id, header, idproduct, idVariant, idProductHost, nameVariant){
+async function deleteVariation(store_id, header, idproduct, idVariant, idProductHost, nameVariant, stockProduct){
     return new Promise(async (resolve, reject) => {
         await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}/variants/${idVariant}`, header)
         .then(async () => {
@@ -413,7 +414,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                     await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
                 }else
                 if(error.response.data.description=="The last variant of a product cannot be deleted."){
-                    await updateProduct(store_id, header, {"attributes": ["","",""]}, idproduct, idProductHost)
+                    await updateProduct(store_id, header, {"attributes": [""]}, idproduct, idProductHost)
                     .then(async () => {
                         await getVariants(store_id, header, idproduct, idProductHost)
                         .then(async (response) => {
@@ -424,8 +425,8 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                                 await saveNewUniqueIdInProduct(idProductHost, response)
                             })
                         })
-                        .then(() => {
-    
+                        .then(async () => {
+                            await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                         })
                     })
                     .then(async () => {
@@ -440,7 +441,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                 }
             }else{
                 setTimeout(async () => {
-                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, nameVariant)
+                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, nameVariant, stockProduct)
                     .then(async() => {
                         resolve()
                     })

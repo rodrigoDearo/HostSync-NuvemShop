@@ -12,7 +12,7 @@ const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.
 //const userDataPath = 'src/build';
 const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
-var produtosDeletados;
+var produtosDeletados = 0;
 
 async function requireAllRegistersNuvem(index){
     let productsDB = JSON.parse(fs.readFileSync(pathProducts));
@@ -150,6 +150,8 @@ async function readingAllRecordProducts(productsRecords, index){
                             "stock": parseInt(record.ESTOQUE)
                         }
                     ],
+                    "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),
+                    "stock": parseInt(record.ESTOQUE),
                     "brand": `${record.MARCA}`,
                     "published": ((record.STATUS=='ATIVO')&&(parseInt(record.ESTOQUE)>0))? true : false
             }
@@ -189,7 +191,8 @@ async function registerOrUpdateProduct(product){
     return new Promise(async (resolve, reject) => {
         let productsDB = JSON.parse(fs.readFileSync(pathProducts))
         let idProductHost = product.codigo;
-
+        let stockProduct = product.stock;
+        
         let justProduct = product.variants[0];
         let productAndVariants = product;
         delete productAndVariants.variants //removing variants, body will be afect the product and the variants, once time the "variants" refer to father product
@@ -210,7 +213,7 @@ async function registerOrUpdateProduct(product){
         if(!productAlreadyRegister&&productIsActiveOnHost){
             await preparingPostProduct(product)
             .then(async () => {
-                await requireAllVariationsOfAProduct(idProductHost)
+                await requireAllVariationsOfAProduct(idProductHost, stockProduct)
                 .then(() => {
                     resolve();
                 })
@@ -223,7 +226,7 @@ async function registerOrUpdateProduct(product){
             if(productIsActiveOnNuvem){
                 await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
                 .then(async () => {
-                    await requireAllVariationsOfAProduct(idProductHost)
+                    await requireAllVariationsOfAProduct(idProductHost, stockProduct)
                 })
                 .then(async () => {
                     let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
@@ -241,7 +244,7 @@ async function registerOrUpdateProduct(product){
             else{
                 await preparingUndeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
                 .then(async () => {
-                    await requireAllVariationsOfAProduct(idProductHost)
+                    await requireAllVariationsOfAProduct(idProductHost, stockProduct)
                     .then(() => {
                         resolve();
                     })
