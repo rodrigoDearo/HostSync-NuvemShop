@@ -12,12 +12,11 @@ const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.
 //const userDataPath = 'src/build';
 const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
-
+var produtosDeletados;
 
 async function requireAllRegistersNuvem(index){
     let productsDB = JSON.parse(fs.readFileSync(pathProducts));
     let finish = false
-    let produtosDeletados = 0
 
     return new Promise(async (resolve, reject) => {
         let i = index+1;
