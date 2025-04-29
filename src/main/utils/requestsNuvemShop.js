@@ -464,19 +464,20 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
     })
 }
 
-
-async function uploadImage(store_id, body, idProductTray, idProductHost){
+async function uploadImage(store_id, header, body, idProductNuvem, idProductHost, hash){
     return new Promise(async (resolve, reject) => {
-        await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, body)
+        await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProductNuvem}/images`, body, header)
         .then(async (answer) => {
-            await successHandlingRequests('image', 'post', idProductHost, null, null)
+            console.log(answer.data)
+            await successHandlingRequests('image', 'post', idProductHost, answer.data.id, [hash])
         })
         .catch(async (error) => {
+
             if(error.response){
                 await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, body)
             }else{
                 setTimeout(async () => {
-                    await uploadImage(store_id, body, idProductTray, idProductHost)
+                    await uploadImage(store_id, body, idProductNuvem, idProductHost)
                     .then(async() => {
                         resolve()
                     })
@@ -496,6 +497,44 @@ async function uploadImage(store_id, body, idProductTray, idProductHost){
         })    
     })
 }
+
+
+async function deleteImage(store_id, header, idProductNuvem, idImage, idProductHost){
+    return new Promise(async (resolve, reject) => {
+        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProductNuvem}/images/${idImage}`, header)
+        .then(async (answer) => {
+            await successHandlingRequests('image', 'delete', idProductHost, null, null)
+        })
+        .catch(async (error) => {
+            if(error.response){
+                if(error.response.data.description=='Product_Image with such id does not exist'){
+                    await successHandlingRequests('image', 'delete', idProductHost, null, null)
+                }else{
+                    await errorHandlingRequest('image', 'DELETE', idProductHost, null, error.response.data, null)
+                }
+            }else{
+                setTimeout(async () => {
+                    await deleteImage(store_id, header, idProductNuvem, idImage, idProductHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        console.log('Delete Image Loading...')
+
+                        await errorHandlingRequest('image', 'DELETE', idProductHost, null, 'CONNECTION ERROR', null)
+                        .then(async () => {
+                            resolve()
+                        })
+                    })
+                }, 1500); 
+            }
+        })
+        .finally(() => {
+            resolve()
+        })    
+    })
+}
+
 
 // ---------------------------------------------------------------------
 
@@ -547,5 +586,6 @@ module.exports = {
     updateVariation,
     deleteVariation,
     uploadImage,
+    deleteImage,
     generateToken
 }

@@ -171,14 +171,24 @@ async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, o
       resolve()
     }else
     if(destiny=="image"){
+      let productsDB = JSON.parse(fs.readFileSync(pathProducts))
 
       switch (resource) {
         case "post":
-          gravarLog('Atualizado imagem de produto com sucesso');
+          productsDB[`${idHost}`].imageId = `${idNuvemShop}`
+          productsDB[`${idHost}`].hashImage = othersInfo[0]
+          gravarLog('Cadastrado imagem de produto com sucesso');
+          break;
+
+        case "delete":
+          productsDB[`${idHost}`].imageId = false
+          productsDB[`${idHost}`].hashImage = false
+          gravarLog('Deletado imagem de produto com sucesso');
           break;
 
       }
-      
+
+      fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
       resolve()
     }else
     if(destiny=="token"){
@@ -213,11 +223,14 @@ async function errorHandlingRequest(destiny, resource, idHost, idNuvemShop, erro
       const data = new Date();
       data.setHours(data.getHours() - 3);
       const dataFormatada = `${data.getFullYear()}-${data.getMonth() + 1}-${data.getDate()}`;
+      
+      let mensagemErro = JSON.stringify(errors).length > 500 ? 'Erro causado por Bad Request, mensagem longa' : errors
+      
       errorsDB[destiny][idHost] = {
         "typeRequest": resource,
         "idNuvemShop": idNuvemShop,
         "timeRequest": dataFormatada,
-        "returnRequest": errors,
+        "returnRequest": mensagemErro,
         "bodyRequest": body
       }
 
