@@ -171,14 +171,27 @@ async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, o
       resolve()
     }else
     if(destiny=="image"){
+      let productsDB = JSON.parse(fs.readFileSync(pathProducts))
 
       switch (resource) {
         case "post":
+          productsDB[`${idHost}`].imageId = `${idNuvemShop}`
+          gravarLog('Cadastrado imagem de produto com sucesso');
+          break;
+
+        case "put":
+          productsDB[`${idHost}`].imageId = `${idNuvemShop}`
           gravarLog('Atualizado imagem de produto com sucesso');
+          break;
+
+        case "delete":
+          productsDB[`${idHost}`].imageId = ''
+          gravarLog('Deletado imagem de produto com sucesso');
           break;
 
       }
       
+      fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
       resolve()
     }else
     if(destiny=="token"){
