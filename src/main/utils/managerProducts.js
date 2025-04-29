@@ -6,7 +6,7 @@ const { app } = require('electron')
 const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingDeletePermanentProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
-const { uploadOrDeleteImageImgur } = require('./managerImages.js')
+const { registerOrUpdateImage } = require('./managerImages.js')
 const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js')
 
 //const userDataPath = 'src/build';
@@ -164,16 +164,14 @@ async function readingAllRecordProducts(productsRecords, index){
                     product.categories	= []
                 }
                 await registerOrUpdateProduct(product)
-            })/*
-            .then(async () => {
-                await uploadOrDeleteImageImgur(record.ID_PRODUTO, record.FOTO)
                 .then(async () => {
-                    await uploadOrDeleteImageNuvem(record.ID_PRODUTO)
+                    await registerOrUpdateImage(record.FOTO, record.ID_PRODUTO)
                 })
-                
-            })*/
+            })
             .then(async() => {
+
                 setTimeout(async() => {
+
                     await readingAllRecordProducts(productsRecords, i)
                     .then(() => {
                         resolve()
