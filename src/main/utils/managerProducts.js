@@ -55,7 +55,8 @@ async function readingProductsOnPage(page, products, index){
             console.log(`LENDO PRODUCT: ${page[index].name.pt} COM RESPONSE: ${response}`)
 
                 if(response){
-                   // verifyVariants
+                   // zerar variantes do JSON
+                   // rodar o updateOrDeleteVariants
                 }else{
                     await preparingDeletePermanentProduct(page[index].id)
                     .then(() => {
