@@ -13,33 +13,6 @@ const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
 
-async function readingVariantOnProductsOnPage(variantsInProduct, products, index){
-    return new Promise(async (resolve, reject) => {
-        let i = index+1;
-
-        if(page[i]){
-           await findProductKeyByIdNuvemShopAsync(products, page[i].id)
-           .then(async (response) => {
-                if(response){
-                    //verify variants
-                }else{
-                    //delete
-                }
-           })
-           .then(async () => {
-                await findProductKeyByIdNuvemShopAsync(page, products, index)
-                .then(() => {
-                    resolve()
-                })
-            })
-        }else{
-            resolve()
-        }
-
-    })
-}
-
-
 async function requireAllVariationsOfAProduct(idProduct, stockProduct){
     return new Promise(async(resolve, reject) => {
         try {
@@ -63,7 +36,7 @@ async function requireAllVariationsOfAProduct(idProduct, stockProduct){
                                 P.CUSTO,
                                 G.GRADE,
                                 PG.ESTOQUE,
-                                P.STATUS
+                                P.STATUS,
                             FROM PRODUTOS_GRADE_ITENS PG
                             LEFT JOIN PRODUTOS P ON PG.ID_PRODUTO = P.ID_PRODUTO
                             LEFT JOIN GRADE G ON PG.ID_GRADE = G.ID

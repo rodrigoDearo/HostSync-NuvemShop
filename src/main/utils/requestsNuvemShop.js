@@ -29,6 +29,10 @@ async function registerProduct(store_id, header, body, idHost){
         .then(async (answer) => {
             await successHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
         })
+        .then(async () => {
+            // TODO: verify body
+            await updateVariation(store_id, header, {}, answer.data.id, answer.data.variants[0].id, idHost)
+        })
         .catch(async (error) => {
             if(error.response){
                 await errorHandlingRequest('product', 'POST', idHost, null, error.response.data, body)
@@ -414,6 +418,8 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                     await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
                 }else
                 if(error.response.data.description=="The last variant of a product cannot be deleted."){
+                    let newUniqueId;
+
                     await updateProduct(store_id, header, {"attributes": [""]}, idproduct, idProductHost)
                     .then(async () => {
                         await getVariants(store_id, header, idproduct, idProductHost)
@@ -423,10 +429,15 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                             await putVariantsInProduct(store_id, header, bodyPutVariants, idproduct, idProductHost)
                             .then(async (response) => {
                                 await saveNewUniqueIdInProduct(idProductHost, response)
+                                newUniqueId = response;
                             })
                         })
                         .then(async () => {
                             await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
+                        })
+                        .then(async () => {
+                            // TODO: verify body
+                            await updateVariation(store_id, header, {}, newUniqueId, idproduct, idProductHost)
                         })
                     })
                     .then(async () => {

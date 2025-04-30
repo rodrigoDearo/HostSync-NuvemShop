@@ -52,11 +52,9 @@ async function readingProductsOnPage(page, products, index){
         if(page[index]){
            await findProductKeyByIdNuvemShopAsync(products, page[index].id)
            .then(async (response) => {
-            console.log(`LENDO PRODUCT: ${page[index].name.pt} COM RESPONSE: ${response}`)
 
                 if(response){
-                   // zerar variantes do JSON
-                   // rodar o updateOrDeleteVariants
+//! TRECHO INCOMPLETO - DEVE SER REALIZADO UM DELETE DAS VARIANTS LIDAS NO GET E DELETAR VARIANTES DO JSON
                 }else{
                     await preparingDeletePermanentProduct(page[index].id)
                     .then(() => {
