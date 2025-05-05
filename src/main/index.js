@@ -91,7 +91,17 @@ ipcMain.handle('getInfoUser', async (events, args) => {
 ipcMain.handle('startProgram', async () => {
   gravarLog(' . . . Starting HostSync  . . .')
 
-  await mainProcess()
+  await mainProcess(true)
+  .then((response) => {
+    return response
+  })
+})
+
+
+ipcMain.handle('quickStart', async () => {
+  gravarLog(' . . . Starting HostSync  . . .')
+
+  await mainProcess(false)
   .then((response) => {
     return response
   })
@@ -106,7 +116,7 @@ ipcMain.handle('alignBase', async () => {
 })
 
 
-async function mainProcess(){
+async function mainProcess(syncFull){
   return new Promise(async (resolve, reject) => {
     var config;
 
@@ -126,9 +136,11 @@ async function mainProcess(){
       }
     })
     .then(async () => {
-      let mensageReturn = await requireAllProducts(config)
-      if(mensageReturn.code == 500){
-        reject(mensageReturn)
+      if(syncFull){
+        let mensageReturn = await requireAllProducts(config)
+        if(mensageReturn.code == 500){
+          reject(mensageReturn)
+        }
       }
     })
     .then(async () => {

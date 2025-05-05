@@ -56,6 +56,16 @@ async function startSync(){
 }
 
 
+async function startQuickSync(){
+    await loadingPage(true)
+    await window.api.quickStart()
+    .then(async () => {
+        await loadingPage(false)
+    })
+  //  alert(mensage)
+}
+
+
 async function alignBase(){
     await loadingPage(true)
     await window.api.align()

@@ -77,6 +77,7 @@ async function registerOrUpdateImage(nameImage, idProductHost){
       }
 
     } catch (error) {
+      console.log(error)
       gravarLog('Erro ao processar a imagem:', error)
       resolve()
     }

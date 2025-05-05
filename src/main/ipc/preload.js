@@ -8,6 +8,7 @@ const WINDOW_API = {
     saveNuvemShop: (code) => ipcRenderer.invoke('saveInfoNuvemShop', code),
     getInfoUser: (field) => ipcRenderer.invoke('getInfoUser', field),
     start: () => ipcRenderer.invoke('startProgram'),
+    quickStart: () => ipcRenderer.invoke('startReadNotifyTable'),
     align: () => ipcRenderer.invoke('alignBase')
 }
 
