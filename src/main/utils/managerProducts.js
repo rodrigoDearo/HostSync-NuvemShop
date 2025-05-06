@@ -175,7 +175,7 @@ async function readingAllRecordProducts(productsRecords, index){
                     .then(() => {
                         resolve()
                     })
-                }, 400);
+                }, 1500);
             })
 
         }
