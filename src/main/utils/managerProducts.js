@@ -9,8 +9,8 @@ const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { registerOrUpdateImage } = require('./managerImages.js')
 const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js')
 
-//const userDataPath = 'src/build';
-const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+const userDataPath = 'src/build';
+//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 var produtosDeletados = 0;
 
@@ -143,18 +143,7 @@ async function readingAllRecordProducts(productsRecords, index){
                         }
                     ],
                     "variants": [
-                        {
-                            /**
-                             * {
-                                "values": [
-                                    {
-                                    "en": "X-Large"
-                                    }
-                                ],
-                                "price": "19.00"
-                                }
-                             */
-                            
+                        {                          
                             "price": parseFloat(String(record.VALOR_VENDA ?? '').replace(',', '.')).toFixed(2),
                             //"cost_price": parseFloat(String(record.CUSTO ?? '').replace(',', '.')).toFixed(2),
                             "stock": parseInt(record.ESTOQUE)

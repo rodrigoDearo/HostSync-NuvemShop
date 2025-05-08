@@ -419,13 +419,14 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                 }else
                 if(error.response.data.description=="The last variant of a product cannot be deleted."){
                     let newUniqueId;
+                    let bodyPutVariants
 
                     await updateProduct(store_id, header, {"attributes": [""]}, idproduct, idProductHost)
                     .then(async () => {
                         await getVariants(store_id, header, idproduct, idProductHost)
                         .then(async (response) => {
                             response[0].values = []
-                            let bodyPutVariants = response
+                            bodyPutVariants = response
                             await putVariantsInProduct(store_id, header, bodyPutVariants, idproduct, idProductHost)
                             .then(async (response) => {
                                 await saveNewUniqueIdInProduct(idProductHost, response)
@@ -436,7 +437,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                             await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                         })
                         .then(async () => {
-                            // TODO: verify body
+
                             await updateVariation(store_id, header, {}, newUniqueId, idproduct, idProductHost)
                         })
                     })
@@ -479,7 +480,6 @@ async function uploadImage(store_id, header, body, idProductNuvem, idProductHost
     return new Promise(async (resolve, reject) => {
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProductNuvem}/images`, body, header)
         .then(async (answer) => {
-            console.log(answer.data)
             await successHandlingRequests('image', 'post', idProductHost, answer.data.id, [hash])
         })
         .catch(async (error) => {
