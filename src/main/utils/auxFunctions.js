@@ -321,8 +321,7 @@ function copyJsonFilesToUserData() {
       'configApp.json',
       'products.json',
       'categories.json',
-      'errorsDB.json',
-      '.env'
+      'errorsDB.json'
   ];
 
   filesToCopy.forEach(file => {
