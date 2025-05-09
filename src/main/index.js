@@ -166,3 +166,7 @@ async function alignBase(){
     })
   })
 }
+
+//ver se esta subindo imagem
+//ver se esta subindo variantes
+//se nao tentar arrumar
