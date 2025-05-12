@@ -28,11 +28,13 @@ async function registerProduct(store_id, header, body, idHost){
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, body, header)
         .then(async (answer) => {
             await successHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
-        })/*
-        .then(async () => {
-            // TODO: verify body
-           // await updateVariation(store_id, header, {}, answer.data.id, answer.data.variants[0].id, idHost)
-        })*/
+            .then(async () => {
+                await updateVariation(store_id, header, {"price": body.price, "stock": body.stock}, answer.data.id, answer.data.variants[0].id, idHost)
+            })
+            .catch(async () => {
+                resolve()
+            })
+        })
         .catch(async (error) => {
             if(error.response){
                 await errorHandlingRequest('product', 'POST', idHost, null, error.response.data, body)
