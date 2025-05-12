@@ -74,7 +74,7 @@ async function readingAllRecordVariations(variationsRecords, index, idProdutoHos
             record = variationsRecords[index]
         }else
         {
-            resolve()
+            variationsRecords = []
         }
          
         let i = index + 1;
