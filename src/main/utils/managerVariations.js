@@ -8,8 +8,8 @@ const { returnConfigToAccessDB } = require('./auxFunctions.js')
 
 var variationsModificateds = []
 
-//const userDataPath = 'src/build';
-const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+const userDataPath = 'src/build';
+//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
 
@@ -67,9 +67,16 @@ async function requireAllVariationsOfAProduct(idProduct, stockProduct){
 
 async function readingAllRecordVariations(variationsRecords, index, idProdutoHost, stockProduct){
     return new Promise(async (resolve, reject) => {
-        let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+        let productsDB = JSON.parse(fs.readFileSync(pathProducts));
+        let record;
 
-        let record = variationsRecords[index]
+        if(variationsRecords){
+            record = variationsRecords[index]
+        }else
+        {
+            resolve()
+        }
+         
         let i = index + 1;
 
         if(i > variationsRecords.length){

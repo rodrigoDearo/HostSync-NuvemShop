@@ -46,7 +46,7 @@ async function registerOrUpdateImage(nameImage, idProductHost){
         await returnValueFromJson('pathdbhost')
         .then(async (response) => {
           const imgBase64 = await retornarBase64DaImagem(response, nameImage);
-          const last8OfString = imgBase64.slice(-8);
+          const last8OfString = imgBase64.toString().slice(-8);
 
           if(image){
             if(last8OfString==productsDB[`${idProductHost}`].hashImage){
@@ -63,7 +63,7 @@ async function registerOrUpdateImage(nameImage, idProductHost){
             }
           }else{
             await preparingUploadImage(imgBase64, idProductNuvem, idProductHost, last8OfString)
-            then(() => {
+            .then(() => {
               resolve()
             })
           }

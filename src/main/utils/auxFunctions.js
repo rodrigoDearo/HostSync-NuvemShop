@@ -6,8 +6,8 @@ const { returnInfo } = require('../envManager');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { error } = require('node:console');
 
-//const userDataPath = 'src/build';
-const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+const userDataPath = 'src/build';
+//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathLog = path.join(userDataPath, 'logs');
 const pathConfigApp = path.join(userDataPath, 'configApp.json');
 const pathProducts = path.join(userDataPath, 'products.json');
@@ -78,6 +78,8 @@ async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, o
             "idNuvemShop": `${idNuvemShop}`,
             "UniqueId": `${othersInfo}`,
             "status": "ATIVO",
+            "imageId": "",
+            "hashImage": "",
             "variations": {}
           }
           await verifyToDeleteErrorRecord(destiny, idHost, 'POST')

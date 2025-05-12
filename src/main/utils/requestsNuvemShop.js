@@ -28,11 +28,11 @@ async function registerProduct(store_id, header, body, idHost){
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, body, header)
         .then(async (answer) => {
             await successHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
-        })
+        })/*
         .then(async () => {
             // TODO: verify body
-            await updateVariation(store_id, header, {}, answer.data.id, answer.data.variants[0].id, idHost)
-        })
+           // await updateVariation(store_id, header, {}, answer.data.id, answer.data.variants[0].id, idHost)
+        })*/
         .catch(async (error) => {
             if(error.response){
                 await errorHandlingRequest('product', 'POST', idHost, null, error.response.data, body)
@@ -436,8 +436,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                             await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                         })
                         .then(async () => {
-                            // TODO: verify body
-                            await updateVariation(store_id, header, {}, newUniqueId, idproduct, idProductHost)
+                           
                         })
                     })
                     .then(async () => {
