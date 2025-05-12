@@ -7,8 +7,8 @@ const { preparingUploadImage, preparingDeleteImage } = require('./preparingReque
 const { returnValueFromJson } = require('./manageInfoUser');
 const { gravarLog } = require('./auxFunctions');
 
-//const userDataPath = 'src/build';
-const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+const userDataPath = 'src/build';
+//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
 
@@ -32,32 +32,37 @@ async function registerOrUpdateImage(nameImage, idProductHost){
   return new Promise(async (resolve, reject) => {
     try {
       let productsDB = JSON.parse(fs.readFileSync(pathProducts))
-      let image = productsDB[`${idProductHost}`].imageId
-      let idProductNuvem = productsDB[`${idProductHost}`].idNuvemShop
+
+      let image, idProductNuvem;      
+
+      if(productsDB[`${idProductHost}`]){
+        image = productsDB[`${idProductHost}`].imageId
+        idProductNuvem = productsDB[`${idProductHost}`].idNuvemShop
+      }else{  
+        resolve()
+      }
 
       if(nameImage){
         await returnValueFromJson('pathdbhost')
         .then(async (response) => {
           const imgBase64 = await retornarBase64DaImagem(response, nameImage);
-          const first8OfString = imgBase64.slice(0, 8)
-          
-          console.log(nameImage)
+          const last8OfString = imgBase64.slice(-8);
 
           if(image){
-            if(first8OfString==productsDB[`${idProductHost}`].hashImage){
+            if(last8OfString==productsDB[`${idProductHost}`].hashImage){
               resolve()
             }
             else{
               await preparingDeleteImage(idProductNuvem, image, idProductHost)
               .then(async() => {
-                await preparingUploadImage(imgBase64, idProductNuvem, idProductHost, first8OfString)
+                await preparingUploadImage(imgBase64, idProductNuvem, idProductHost, last8OfString)
               })
               .then(() => {
                 resolve()
               })
             }
           }else{
-            await preparingUploadImage(imgBase64, idProductNuvem, idProductHost, first8OfString)
+            await preparingUploadImage(imgBase64, idProductNuvem, idProductHost, last8OfString)
             then(() => {
               resolve()
             })
