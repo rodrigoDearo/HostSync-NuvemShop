@@ -438,7 +438,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                             await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                         })
                         .then(async () => {
-                           
+                            await updateVariation(store_id, header, {"stock": stockProduct}, idproduct, newUniqueId, idProductHost)
                         })
                     })
                     .then(async () => {

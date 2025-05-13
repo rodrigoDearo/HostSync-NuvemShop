@@ -36,7 +36,7 @@ async function requireAllVariationsOfAProduct(idProduct, stockProduct){
                                 P.CUSTO,
                                 G.GRADE,
                                 PG.ESTOQUE,
-                                P.STATUS,
+                                P.STATUS
                             FROM PRODUTOS_GRADE_ITENS PG
                             LEFT JOIN PRODUTOS P ON PG.ID_PRODUTO = P.ID_PRODUTO
                             LEFT JOIN GRADE G ON PG.ID_GRADE = G.ID
@@ -72,8 +72,7 @@ async function readingAllRecordVariations(variationsRecords, index, idProdutoHos
 
         if(variationsRecords){
             record = variationsRecords[index]
-        }else
-        {
+        }else{
             variationsRecords = []
         }
          
