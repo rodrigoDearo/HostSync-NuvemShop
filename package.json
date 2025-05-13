@@ -49,10 +49,6 @@
       {
         "from": "./errorsDB.json",
         "to": "errorsDB.json"
-      },
-      {
-        "from": "./.env",
-        "to": ".env"
       }
     ]
   },

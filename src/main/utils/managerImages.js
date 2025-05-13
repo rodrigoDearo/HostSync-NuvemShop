@@ -32,14 +32,21 @@ async function registerOrUpdateImage(nameImage, idProductHost){
   return new Promise(async (resolve, reject) => {
     try {
       let productsDB = JSON.parse(fs.readFileSync(pathProducts))
-      let image = productsDB[`${idProductHost}`] ? productsDB[`${idProductHost}`].imageId : null
-      let idProductNuvem = productsDB[`${idProductHost}`] ? productsDB[`${idProductHost}`].idNuvemShop : null
+
+      let image, idProductNuvem;      
+
+      if(productsDB[`${idProductHost}`]){
+        image = productsDB[`${idProductHost}`].imageId
+        idProductNuvem = productsDB[`${idProductHost}`].idNuvemShop
+      }else{  
+        resolve()
+      }
 
       if(nameImage){
         await returnValueFromJson('pathdbhost')
         .then(async (response) => {
           const imgBase64 = await retornarBase64DaImagem(response, nameImage);
-          const last8OfString = imgBase64.toString().slice(-8)
+          const last8OfString = imgBase64.toString().slice(-8);
 
           if(image){
             if(last8OfString==productsDB[`${idProductHost}`].hashImage){
@@ -66,7 +73,7 @@ async function registerOrUpdateImage(nameImage, idProductHost){
       }else{
         if(image){
             await preparingDeleteImage(idProductNuvem, image, idProductHost)
-            then(() => {
+            .then(() => {
               resolve()
             })
           }else{

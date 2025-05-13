@@ -28,10 +28,12 @@ async function registerProduct(store_id, header, body, idHost){
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products`, body, header)
         .then(async (answer) => {
             await successHandlingRequests('product', 'post', idHost, answer.data.id, answer.data.variants[0].id)
-        })
-        .then(async () => {
-            // TODO: verify body
-            await updateVariation(store_id, header, {}, answer.data.id, answer.data.variants[0].id, idHost)
+            .then(async () => {
+                await updateVariation(store_id, header, {"price": body.price, "stock": body.stock}, answer.data.id, answer.data.variants[0].id, idHost)
+            })
+            .catch(async () => {
+                resolve()
+            })
         })
         .catch(async (error) => {
             if(error.response){
@@ -419,14 +421,13 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                 }else
                 if(error.response.data.description=="The last variant of a product cannot be deleted."){
                     let newUniqueId;
-                    let bodyPutVariants
 
                     await updateProduct(store_id, header, {"attributes": [""]}, idproduct, idProductHost)
                     .then(async () => {
                         await getVariants(store_id, header, idproduct, idProductHost)
                         .then(async (response) => {
                             response[0].values = []
-                            bodyPutVariants = response
+                            let bodyPutVariants = response
                             await putVariantsInProduct(store_id, header, bodyPutVariants, idproduct, idProductHost)
                             .then(async (response) => {
                                 await saveNewUniqueIdInProduct(idProductHost, response)
@@ -437,8 +438,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                             await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                         })
                         .then(async () => {
-
-                            await updateVariation(store_id, header, {}, newUniqueId, idproduct, idProductHost)
+                            await updateVariation(store_id, header, {"stock": stockProduct}, idproduct, newUniqueId, idProductHost)
                         })
                     })
                     .then(async () => {

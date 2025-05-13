@@ -108,7 +108,9 @@ const { returnInfo } = require('../envManager');
       "position": 1,
       "attachment": image
     };
-    await uploadImage(infosNuvem[0], infosNuvem[1], body, idProductNuvem, idProductHost, hash);
+    if(image){
+      await uploadImage(infosNuvem[0], infosNuvem[1], body, idProductNuvem, idProductHost, hash);
+    }
   }
 
   async function preparingDeleteImage(idProductNuvem, idImageNuvem, idProductHost) {

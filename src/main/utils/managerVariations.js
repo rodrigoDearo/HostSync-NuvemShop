@@ -36,7 +36,7 @@ async function requireAllVariationsOfAProduct(idProduct, stockProduct){
                                 P.CUSTO,
                                 G.GRADE,
                                 PG.ESTOQUE,
-                                P.STATUS,
+                                P.STATUS
                             FROM PRODUTOS_GRADE_ITENS PG
                             LEFT JOIN PRODUTOS P ON PG.ID_PRODUTO = P.ID_PRODUTO
                             LEFT JOIN GRADE G ON PG.ID_GRADE = G.ID
@@ -67,7 +67,7 @@ async function requireAllVariationsOfAProduct(idProduct, stockProduct){
 
 async function readingAllRecordVariations(variationsRecords, index, idProdutoHost, stockProduct){
     return new Promise(async (resolve, reject) => {
-        let productsDB = JSON.parse(fs.readFileSync(pathProducts))
+        let productsDB = JSON.parse(fs.readFileSync(pathProducts));
         let record;
 
         if(variationsRecords){
@@ -75,7 +75,7 @@ async function readingAllRecordVariations(variationsRecords, index, idProdutoHos
         }else{
             variationsRecords = []
         }
-     
+         
         let i = index + 1;
 
         if(i > variationsRecords.length){
