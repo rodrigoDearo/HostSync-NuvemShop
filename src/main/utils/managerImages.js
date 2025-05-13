@@ -73,7 +73,7 @@ async function registerOrUpdateImage(nameImage, idProductHost){
       }else{
         if(image){
             await preparingDeleteImage(idProductNuvem, image, idProductHost)
-            then(() => {
+            .then(() => {
               resolve()
             })
           }else{

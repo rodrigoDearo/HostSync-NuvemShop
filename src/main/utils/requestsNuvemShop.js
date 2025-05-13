@@ -480,7 +480,6 @@ async function uploadImage(store_id, header, body, idProductNuvem, idProductHost
     return new Promise(async (resolve, reject) => {
         await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProductNuvem}/images`, body, header)
         .then(async (answer) => {
-            console.log(answer.data)
             await successHandlingRequests('image', 'post', idProductHost, answer.data.id, [hash])
         })
         .catch(async (error) => {
