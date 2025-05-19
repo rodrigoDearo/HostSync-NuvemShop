@@ -8,8 +8,8 @@ const { returnConfigToAccessDB } = require('./auxFunctions.js')
 
 var variationsModificateds = []
 
-const userDataPath = 'src/build';
-//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+//const userDataPath = 'src/build';
+const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
 

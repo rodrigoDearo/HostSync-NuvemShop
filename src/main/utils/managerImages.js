@@ -7,8 +7,8 @@ const { preparingUploadImage, preparingDeleteImage } = require('./preparingReque
 const { returnValueFromJson } = require('./manageInfoUser');
 const { gravarLog } = require('./auxFunctions');
 
-const userDataPath = 'src/build';
-//const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
+//const userDataPath = 'src/build';
+const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
 const pathProducts = path.join(userDataPath, 'products.json');
 
 
