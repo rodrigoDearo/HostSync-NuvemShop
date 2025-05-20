@@ -1,1 +1,3 @@
 # HostSync NuvemShop
+
+# ------------------
