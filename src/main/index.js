@@ -4,7 +4,7 @@ const path = require('node:path')
 const { saveInfos, returnValueFromJson } = require('./utils/manageInfoUser.js')
 const { createDependencies, limparTabela } = require('./utils/dependenciesFDB.js')
 const { copyJsonFilesToUserData, returnConfigToAccessDB, gravarLog, deleteErrorsRecords } = require('./utils/auxFunctions.js')
-const { requireAllRegistersNuvem, requireAllProducts } = require('./utils/managerProducts.js')
+const { requireAllProducts } = require('./utils/managerProducts.js')
 const { readNewRecords } = require('./utils/managerHostTableNotify.js');
 const { preparingGenerateToken } = require('./utils/preparingRequests.js')
 
@@ -101,18 +101,10 @@ ipcMain.handle('startProgram', async () => {
 ipcMain.handle('quickStart', async () => {
   gravarLog(' . . . Starting HostSync  . . .')
 
-  await mainProcess(false)
+  await mainProcessoVariation()
   .then((response) => {
     return response
   })
-})
-
-
-ipcMain.handle('alignBase', async () => {
-  gravarLog(' . . . Aligning Base  . . .')
-
-  let numeroProdutosDeletados = await alignBase()
-  return numeroProdutosDeletados
 })
 
 
@@ -158,11 +150,43 @@ async function mainProcess(syncFull){
 }
 
 
-async function alignBase(){
+async function mainProcessoVariation(){
   return new Promise(async (resolve, reject) => {
-    await requireAllRegistersNuvem(0)
-    .then(async (produtos) => {
-      resolve(produtos)
+    var config;
+
+    await returnConfigToAccessDB()
+    .then(async (response) => {
+      config = response;
+      await deleteErrorsRecords()
+      let mensageReturn = await createDependencies(config)
+      if(mensageReturn.code == 500){
+        reject(mensageReturn)
+      }
+    })
+    .then(async () => {
+      let mensageReturn = await limparTabela(config)
+      if(mensageReturn.code == 500){
+        reject(mensageReturn)
+      }
+    })
+    .then(async () => {
+      if(syncFull){
+        let mensageReturn = await requireAllProducts(config)
+        if(mensageReturn.code == 500){
+          reject(mensageReturn)
+        }
+      }
+    })
+    .then(async () => {
+      setInterval(async () => {
+        await readNewRecords(config)
+        .then(() => {
+          gravarLog('---------------------------------------------------------------------')
+          gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES')
+          gravarLog('---------------------------------------------------------------------')
+        })
+      
+      }, 300000);
     })
   })
 }

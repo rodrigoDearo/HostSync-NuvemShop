@@ -6,7 +6,6 @@ const { app } = require('electron')
 const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingDeletePermanentProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
-const { registerOrUpdateImage } = require('./managerImages.js')
 const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js')
 
 //const userDataPath = 'src/build';
@@ -163,9 +162,6 @@ async function readingAllRecordProducts(productsRecords, index){
                     product.categories	= []
                 }
                 await registerOrUpdateProduct(product)
-                .then(async () => {
-                    await registerOrUpdateImage(record.FOTO, record.ID_PRODUTO)
-                })
             })
             .then(async() => {
 
@@ -208,6 +204,7 @@ async function registerOrUpdateProduct(product){
         var IdProducAndVariants = functionReturnIdProductAndVariantsOnNuvem()
 
         if(!productAlreadyRegister&&productIsActiveOnHost){
+            product.published = false;
             await preparingPostProduct(product)
             .then(async () => {
                 await requireAllVariationsOfAProduct(idProductHost, stockProduct)
