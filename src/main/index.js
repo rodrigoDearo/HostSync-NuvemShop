@@ -107,6 +107,9 @@ ipcMain.handle('quickStart', async () => {
   })
 })
 
+/*
+BOTAO ESTÁ DISABLED NESTA EMPRESA, FUNÇÕES DE REQUIRE ALL PRODUTOS E READ NEW RECORDS
+ESTÃO ALTERADAS CONFORME A NECESSIDADE DA EMPRESA
 
 async function mainProcess(syncFull){
   return new Promise(async (resolve, reject) => {
@@ -148,7 +151,7 @@ async function mainProcess(syncFull){
     })
   })
 }
-
+*/
 
 async function mainProcessoVariation(){
   return new Promise(async (resolve, reject) => {
