@@ -87,7 +87,6 @@ ipcMain.handle('getInfoUser', async (events, args) => {
   return valueField
 })
 
-
 ipcMain.handle('startProgram', async () => {
   gravarLog(' . . . Starting HostSync  . . .')
 
@@ -98,7 +97,7 @@ ipcMain.handle('startProgram', async () => {
 })
 
 
-ipcMain.handle('quickStart', async () => {
+ipcMain.handle('startReadNotifyTable', async () => {
   gravarLog(' . . . Starting HostSync  . . .')
 
   await mainProcess(false)
@@ -130,9 +129,11 @@ async function mainProcess(syncFull){
       }
     })
     .then(async () => {
-      let mensageReturn = await limparTabela(config)
-      if(mensageReturn.code == 500){
-        reject(mensageReturn)
+      if(syncFull){
+        let mensageReturn = await limparTabela(config)
+        if(mensageReturn.code == 500){
+          reject(mensageReturn)
+        }
       }
     })
     .then(async () => {
