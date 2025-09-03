@@ -125,14 +125,22 @@ async function mainProcess(syncFull){
       await deleteErrorsRecords()
       let mensageReturn = await createDependencies(config)
       if(mensageReturn.code == 500){
+        console.log(mensageReturn)
         reject(mensageReturn)
+      }else{
+          console.log('1. DEPENDENCIAS CRIADAS COM SUCESSO!')
+          gravarLog('1. DEPENDENCIAS CRIADAS COM SUCESSO!')
       }
     })
     .then(async () => {
       if(syncFull){
         let mensageReturn = await limparTabela(config)
         if(mensageReturn.code == 500){
+          console.log(mensageReturn)
           reject(mensageReturn)
+        }else{
+          console.log('2. TABELA LIMPA COM SUCESSO!')
+          gravarLog('2. TABELA LIMPA COM SUCESSO!')
         }
       }
     })
@@ -140,7 +148,11 @@ async function mainProcess(syncFull){
       if(syncFull){
         let mensageReturn = await requireAllProducts(config)
         if(mensageReturn.code == 500){
+          console.log(mensageReturn)
           reject(mensageReturn)
+        }else{
+          console.log('PRODUTOS SINCRONIZADOS COM SUCESSO')
+          gravarLog('PRODUTOS SINCRONIZADOS COM SUCESSO')
         }
       }
     })

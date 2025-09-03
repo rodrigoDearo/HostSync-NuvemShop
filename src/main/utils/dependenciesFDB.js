@@ -302,7 +302,6 @@ async function criarTabela(config){
             if (err)
               resolve({code: 500, msg:'ERRO AO LIMPAR TABELA, CONTATAR SUPORTE TECNICO'});
   
-            console.log('FOI LIMPADO A TABELA NOTIFICACOES_HOSTSYNC PARA QUE POSSO COMECAR A LEITURA');
           });
           
           db.detach();
