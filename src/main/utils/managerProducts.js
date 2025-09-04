@@ -6,7 +6,9 @@ const { app } = require('electron')
 const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingDeletePermanentProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
-const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js')
+const { registerOrUpdateImage } = require('./managerImages.js')
+const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js');
+const { setTimeout } = require('timers');
 
 //const userDataPath = 'src/build';
 const userDataPath = path.join(app.getPath('userData'), 'ConfigFiles');
@@ -103,17 +105,26 @@ async function requireAllProducts(config){
                             `;
   
             db.query(codigoSQL, async function (err, result){
-                if (err)
+                if (err){
+                    console.log(err)
                     resolve({code: 500, msg:'ERRO AO CONSULTAR TABELA PRODUTOS, CONTATAR SUPORTE TECNICO'});
+                }
                 
+                console.log('3. PRODUTOS CONSULTADOS COM SUCESSO NO BANCO')
+                gravarLog('3. PRODUTOS CONSULTADOS COM SUCESSO NO BANCO')
+
+                
+
                 await readingAllRecordProducts(result, 0)
                 .then(() => {
+                    console.log('PRODUTOS LIDOS COM SUCESSO')
+                    gravarLog('PRODUTOS LIDOS COM SUCESSO')
                     resolve({code: 200, msg:'PRODUTOS CONSULTADOS COM SUCESSO'});
                 })
-                
+
+                db.detach();
             });
           
-        db.detach();
         });
   
       } catch (error) {
@@ -153,6 +164,8 @@ async function readingAllRecordProducts(productsRecords, index){
                     "brand": `${record.MARCA}`,
                     "published": ((record.STATUS=='ATIVO')&&(parseInt(record.ESTOQUE)>0))? true : false
             }
+
+
             await returnCategoryId(record.GRUPO, record.SUBGRUPO)
             .then(async (idCategory) => {
                 if(idCategory){
@@ -161,17 +174,22 @@ async function readingAllRecordProducts(productsRecords, index){
                 else{
                     product.categories	= []
                 }
+
+                gravarLog(`4. PRODUTO ${product.name} ESTRUTURADO COM SUCESSO!`)
+                console.log(`4. PRODUTO ${product.name} ESTRUTURADO COM SUCESSO!`)
+
                 await registerOrUpdateProduct(product)
+                .then(async () => {
+                    await registerOrUpdateImage(record.FOTO, record.ID_PRODUTO)
+                })
             })
             .then(async() => {
-
-                setTimeout(async() => {
-
-                    await readingAllRecordProducts(productsRecords, i)
+                setTimeout(() => {
+                    readingAllRecordProducts(productsRecords, i)
                     .then(() => {
                         resolve()
                     })
-                }, 1500);
+                }, 100);
             })
 
         }
@@ -204,56 +222,83 @@ async function registerOrUpdateProduct(product){
         var IdProducAndVariants = functionReturnIdProductAndVariantsOnNuvem()
 
         if(!productAlreadyRegister&&productIsActiveOnHost){
-            product.published = false;
+            console.log('-sera cadastrado')
+            gravarLog('-sera cadastrado')
             await preparingPostProduct(product)
             .then(async () => {
                 await requireAllVariationsOfAProduct(idProductHost, stockProduct)
                 .then(() => {
-                    resolve();
+                    console.log('-variantes consultadas')
+                    gravarLog('-variantes consultadas')
+                    setTimeout(() => {
+                        resolve();
+                    }, 1000);
                 })
             })
         }else
         if(!productAlreadyRegister&&(!productIsActiveOnHost)){
+            console.log('-nada sera feito')
+            gravarLog('-nada sera feito')
             resolve()
         }else
         if(productAlreadyRegister&&productIsActiveOnHost){
             if(productIsActiveOnNuvem){
+                console.log('-sera atualizado')
+                gravarLog('-sera atualizado')
                 await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
                 .then(async () => {
                     await requireAllVariationsOfAProduct(idProductHost, stockProduct)
                 })
                 .then(async () => {
+                    console.log('-variantes consultadas')
+                    gravarLog('-variantes consultadas')
                     let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
 
                     if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
                         await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, idProductHost)
                         .then(() => {
-                            resolve();
+                             setTimeout(() => {
+                                resolve();
+                            }, 1000);
                         })
                     }else{
-                      resolve()  
+                        setTimeout(() => {
+                            resolve();
+                        }, 1000);
                     } 
                 })
             }
             else{
+                console.log('-sera reativado')
+                gravarLog('-sera reativado')
                 await preparingUndeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
                 .then(async () => {
                     await requireAllVariationsOfAProduct(idProductHost, stockProduct)
                     .then(() => {
-                        resolve();
+                        console.log('-variantes consultadas')
+                        gravarLog('-variantes consultadas')
+                        setTimeout(() => {
+                            resolve();
+                        }, 1000);
                     })
                 })
             }
         }else
         if(productAlreadyRegister&&(!productIsActiveOnHost)){
             if(productIsActiveOnNuvem){
+                console.log('-sera deletado')
+                gravarLog('-sera deletado')
                 await preparingDeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
                 .then(() => {
-                    resolve()
+                    setTimeout(() => {
+                        resolve();
+                    }, 1000);
                 })
             }
             else{
-                resolve()
+                setTimeout(() => {
+                    resolve();
+                }, 1000);
             }
         }
         

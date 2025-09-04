@@ -57,8 +57,6 @@ function gravarLog(mensagem) {
   fs.appendFile(logFilePath, logMessage, (err) => {
       if (err) {
           console.error('Erro ao gravar o log:', err);
-      } else {
-          console.log('Log gravado com sucesso!');
       }
   });
 }
