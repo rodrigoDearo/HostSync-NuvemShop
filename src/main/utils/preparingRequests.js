@@ -27,6 +27,7 @@ const { returnInfo } = require('../envManager');
   async function preparingPostProduct(product) {
     const infosNuvem = await getHeaderAndStore();
     const idHost = product.codigo;
+    product.published = false;
     delete product.codigo;
     await registerProduct(infosNuvem[0], infosNuvem[1], product, idHost);
   }
@@ -36,6 +37,7 @@ const { returnInfo } = require('../envManager');
     const idHost = product.codigo;
     delete product.codigo;
     delete product.attributes;
+    delete product.published
     await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
   }
 

@@ -163,7 +163,8 @@ async function readingAllRecordProducts(productsRecords, index){
                     "stock": parseInt(record.ESTOQUE),
                     "brand": `${record.MARCA}`,
                     "published": ((record.STATUS=='ATIVO')&&(parseInt(record.ESTOQUE)>0))? true : false
-            }
+                    // o campo published é usado para fazer a trativa do produto, portanto se for fixar deve ser realizado posterior a tratativa, no preparingRequest
+                }   
 
 
             await returnCategoryId(record.GRUPO, record.SUBGRUPO)
