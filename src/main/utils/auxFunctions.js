@@ -88,12 +88,10 @@ async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, o
           break;
 
         case "delete":
+          delete productsDB[`${idHost}`]
           gravarLog('Deletado registro no banco de ' + destiny);
           break;
 
-        case "undelete":
-          gravarLog('Re-Cadastrado registro no banco de ' + destiny);
-          break;
       }
 
       fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')

@@ -3,7 +3,7 @@ const fs = require ('fs')
 const path = require('node:path')
 const { app } = require('electron')
 
-const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingDeletePermanentProduct, preparingUndeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
+const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
 const { registerOrUpdateImage } = require('./managerImages.js')
@@ -57,7 +57,7 @@ async function readingProductsOnPage(page, products, index){
                 if(response){
 //! TRECHO INCOMPLETO - DEVE SER REALIZADO UM DELETE DAS VARIANTS LIDAS NO GET E DELETAR VARIANTES DO JSON
                 }else{
-                    await preparingDeletePermanentProduct(page[index].id)
+                    await preparingDeleteProduct(page[index].id)
                     .then(() => {
                         produtosDeletados++;
                     })
@@ -211,13 +211,9 @@ async function registerOrUpdateProduct(product){
         var productAlreadyRegister = productsDB[`${product.codigo}`] ? true : false;
         var productIsActiveOnHost = product.published
 
-        const functionReturnStatusOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].status }else{return null}}
         const functionReturnUniqueIdProductOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].UniqueId }else{return null}}
         const functionReturnIdProductAndVariantsOnNuvem = () => {if(productAlreadyRegister){ return productsDB[`${product.codigo}`].idNuvemShop }else{return null}}
         
-        var statusProductOnNuvem = await functionReturnStatusOnNuvem()
-
-        var productIsActiveOnNuvem =  statusProductOnNuvem == 'ATIVO' ? true : false;
         var UniqueIdProductOnNuvem = functionReturnUniqueIdProductOnNuvem()
         var IdProducAndVariants = functionReturnIdProductAndVariantsOnNuvem()
 
@@ -242,64 +238,41 @@ async function registerOrUpdateProduct(product){
             resolve()
         }else
         if(productAlreadyRegister&&productIsActiveOnHost){
-            if(productIsActiveOnNuvem){
-                console.log('-sera atualizado')
-                gravarLog('-sera atualizado')
-                await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
-                .then(async () => {
-                    await requireAllVariationsOfAProduct(idProductHost, stockProduct)
-                })
-                .then(async () => {
-                    console.log('-variantes consultadas')
-                    gravarLog('-variantes consultadas')
-                    let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
+            console.log('-sera atualizado')
+            gravarLog('-sera atualizado')
+            await preparingUpdateProduct(IdProducAndVariants, productAndVariants)
+            .then(async () => {
+                await requireAllVariationsOfAProduct(idProductHost, stockProduct)
+            })
+            .then(async () => {
+                console.log('-variantes consultadas')
+                gravarLog('-variantes consultadas')
+                let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
 
-                    if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
-                        await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, idProductHost)
-                        .then(() => {
-                             setTimeout(() => {
-                                resolve();
-                            }, 1000);
-                        })
-                    }else{
-                        setTimeout(() => {
-                            resolve();
-                        }, 1000);
-                    } 
-                })
-            }
-            else{
-                console.log('-sera reativado')
-                gravarLog('-sera reativado')
-                await preparingUndeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
-                .then(async () => {
-                    await requireAllVariationsOfAProduct(idProductHost, stockProduct)
+                if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
+                    await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, idProductHost)
                     .then(() => {
-                        console.log('-variantes consultadas')
-                        gravarLog('-variantes consultadas')
-                        setTimeout(() => {
+                         setTimeout(() => {
                             resolve();
                         }, 1000);
                     })
-                })
-            }
-        }else
-        if(productAlreadyRegister&&(!productIsActiveOnHost)){
-            if(productIsActiveOnNuvem){
-                console.log('-sera deletado')
-                gravarLog('-sera deletado')
-                await preparingDeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
-                .then(() => {
+                }else{
                     setTimeout(() => {
                         resolve();
                     }, 1000);
-                })
-            }
-            else{
+                } 
+            })
+        
+        }else
+        if(productAlreadyRegister&&(!productIsActiveOnHost)){
+            console.log('-sera deletado')
+            gravarLog('-sera deletado')
+            await preparingDeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
+            .then(() => {
                 setTimeout(() => {
                     resolve();
                 }, 1000);
-            }
+            })
         }
         
     })

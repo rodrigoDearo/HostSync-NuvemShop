@@ -129,7 +129,7 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
 }
 
 
-async function deleteProduct(store_id, header, body, idproduct, idHost){
+async function deleteProductOldest(store_id, header, body, idproduct, idHost){
     return new Promise(async (resolve, reject) => {
         await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
         .then(async () => {
@@ -140,7 +140,7 @@ async function deleteProduct(store_id, header, body, idproduct, idHost){
                 await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
-                    await deleteProduct(store_id, header, body, idproduct, idHost)
+                    await deleteProductOldest(store_id, header, body, idproduct, idHost)
                     .then(async() => {
                         resolve()
                     })
@@ -162,7 +162,7 @@ async function deleteProduct(store_id, header, body, idproduct, idHost){
 }
 
 
-async function deleteProductPermanent(store_id, header, idproduct){
+async function deleteProduct(store_id, header, idproduct){
     return new Promise(async (resolve, reject) => {
         await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, header)
         .then(async () => {
@@ -174,7 +174,7 @@ async function deleteProductPermanent(store_id, header, idproduct){
                 gravarLog('ERRO AO DELETAR PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
             }else{
                 setTimeout(async () => {
-                    await deleteProductPermanent(store_id, header, idproduct)
+                    await deleteProduct(store_id, header, idproduct)
                     .then(async() => {
                         resolve()
                     })
@@ -182,39 +182,6 @@ async function deleteProductPermanent(store_id, header, idproduct){
                         console.log('Delete Product Permanent Loading...')
 
                         await errorHandlingRequest('product', 'DELETEPERMANENT', null, idproduct, 'CONNECTION ERROR', body)
-                        .then(async () => {
-                            resolve()
-                        })
-                    })
-                }, 1500); 
-            }
-        })
-        .finally(() => {
-            resolve()
-        })    
-    })
-}
-
-
-async function undeleteProduct(store_id, header, body, idproduct, idHost){
-    return new Promise(async (resolve, reject) => {
-        await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
-        .then(async (response) => {
-            await successHandlingRequests('product', 'undelete', idHost, idproduct, null)
-        })
-        .catch(async (error) => {
-            if(error.response){
-                await errorHandlingRequest('product', 'UNDELETE', idHost, idproduct, error.response.data, body)
-            }else{
-                setTimeout(async () => {
-                    await undeleteProduct(store_id, header, body, idproduct, idHost)
-                    .then(async() => {
-                        resolve()
-                    })
-                    .catch(async () => {
-                        console.log('Undelete Product Loading...')
-
-                        await errorHandlingRequest('product', 'UNDELETE', idHost,  'CONNECTION ERROR', body)
                         .then(async () => {
                             resolve()
                         })
@@ -589,8 +556,6 @@ module.exports = {
     registerProduct,
     updateProduct,
     deleteProduct,
-    deleteProductPermanent,
-    undeleteProduct,
     registerCategory,
     //deleteCategory,
     registerVariation,
