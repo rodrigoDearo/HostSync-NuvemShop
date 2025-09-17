@@ -57,7 +57,7 @@ async function readingProductsOnPage(page, products, index){
                 if(response){
 //! TRECHO INCOMPLETO - DEVE SER REALIZADO UM DELETE DAS VARIANTS LIDAS NO GET E DELETAR VARIANTES DO JSON
                 }else{
-                    await preparingDeleteProduct(page[index].id)
+                    await preparingDeleteProduct(page[index].id, i)
                     .then(() => {
                         produtosDeletados++;
                     })
@@ -268,7 +268,7 @@ async function registerOrUpdateProduct(product){
         if(productAlreadyRegister&&(!productIsActiveOnHost)){
             console.log('-sera deletado')
             gravarLog('-sera deletado')
-            await preparingDeleteProduct(product.codigo, IdProducAndVariants, productAndVariants)
+            await preparingDeleteProduct(idProductHost, IdProducAndVariants)
             .then(() => {
                 setTimeout(() => {
                     resolve();

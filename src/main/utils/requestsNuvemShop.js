@@ -129,9 +129,9 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
 }
 
 
-async function deleteProductOldest(store_id, header, body, idproduct, idHost){
+async function deleteProduct(store_id, header, idproduct, idHost){
     return new Promise(async (resolve, reject) => {
-        await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
+        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, header)
         .then(async () => {
             await successHandlingRequests('product', 'delete', idHost, idproduct, null)
         })
@@ -140,7 +140,7 @@ async function deleteProductOldest(store_id, header, body, idproduct, idHost){
                 await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
-                    await deleteProductOldest(store_id, header, body, idproduct, idHost)
+                    await deleteProduct(store_id, header, idproduct, idHost)
                     .then(async() => {
                         resolve()
                     })
@@ -148,40 +148,6 @@ async function deleteProductOldest(store_id, header, body, idproduct, idHost){
                         console.log('Delete Product Loading...')
 
                         await errorHandlingRequest('product', 'DELETE', idHost, idproduct, 'CONNECTION ERROR', body)
-                        .then(async () => {
-                            resolve()
-                        })
-                    })
-                }, 1500); 
-            }
-        })
-        .finally(() => {
-            resolve()
-        })    
-    })
-}
-
-
-async function deleteProduct(store_id, header, idproduct){
-    return new Promise(async (resolve, reject) => {
-        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, header)
-        .then(async () => {
-            gravarLog('DELETADO PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
-        })
-        .catch(async (error) => {
-            console.log(error.response.data)
-            if(error.response){
-                gravarLog('ERRO AO DELETAR PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
-            }else{
-                setTimeout(async () => {
-                    await deleteProduct(store_id, header, idproduct)
-                    .then(async() => {
-                        resolve()
-                    })
-                    .catch(async () => {
-                        console.log('Delete Product Permanent Loading...')
-
-                        await errorHandlingRequest('product', 'DELETEPERMANENT', null, idproduct, 'CONNECTION ERROR', body)
                         .then(async () => {
                             resolve()
                         })

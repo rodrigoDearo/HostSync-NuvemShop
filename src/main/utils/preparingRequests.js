@@ -41,9 +41,9 @@ const { returnInfo } = require('../envManager');
     await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
   }
 
-  async function preparingDeleteProduct(idproduct) {
+  async function preparingDeleteProduct(idproduct, idHost) {
     const infosNuvem = await getHeaderAndStore();
-    await deleteProduct(infosNuvem[0], infosNuvem[1], idproduct);
+    await deleteProduct(infosNuvem[0], infosNuvem[1], idproduct, idHost);
   }
   
   async function preparingPostCategory(category) {
