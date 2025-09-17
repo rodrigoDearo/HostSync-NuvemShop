@@ -105,6 +105,9 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
         })
         .catch(async (error) => {
             if(error.response){
+                if(error.response.data.description=='Product with such id does not exist'){
+                    //! tratar: cadastrar produto
+                }
                 await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
@@ -137,6 +140,9 @@ async function deleteProduct(store_id, header, idproduct, idHost){
         })
         .catch(async (error) => {
             if(error.response){
+                if(error.response.data.description=='Product with such id does not exist'){
+                    //! tratar: considerar sucesso
+                }
                 await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
@@ -271,7 +277,14 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
         })
         .catch(async (error) => {
             if(error.response){
-                await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
+                if(error.response.data.description=='The values has the wrong number of elements.'){
+                    //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                }else
+                if(error.response.data.description=='Product with such id does not exist'){
+                    //! tratar: cadastrar produto primeiro
+                }else{
+                    await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
+                }
             }else{
                 setTimeout(async () => {
                     await registerVariation(store_id, header, body, idproduct, idProductHost)
@@ -309,8 +322,14 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
         })
         .catch(async (error) => {
             if(error.response){
+                if(error.response.data.description=='Product with such id does not exist'){
+                    //! tratar: cadastrar produto primeiro e depois variante
+                }else
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
-                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO', 0) 
+                    //! tratar: cadastrar variante 
+                }else
+                if(error.response.data.description=='The values has the wrong number of elements.'){
+                    //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
@@ -348,7 +367,9 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
         })
         .catch(async (error) => {
             if(error.response){
-
+                if(error.response.data.description=='Product with such id does not exist'){
+                    //! tratar: cadastrar produto e desconsiderar variante
+                }else
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
                     await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
                 }else
