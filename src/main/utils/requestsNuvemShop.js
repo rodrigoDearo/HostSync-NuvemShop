@@ -338,7 +338,12 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
         })
         .catch(async (error) => {
             if(error.response){
-                await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
+                if(error.response.data.description=='The values has the wrong number of elements.'){
+                    //!! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                }else{
+                    await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
+                }
+                
             }else{
                 setTimeout(async () => {
                     await registerVariation(store_id, header, body, idproduct, idProductHost)
@@ -378,11 +383,15 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
             if(error.response){
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
                     await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO', 0) 
+                }else
+                if(error.response.data.description=='The values has the wrong number of elements.'){
+                    //!! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
                
-            }else{
+            }
+            else{
                 setTimeout(async () => {
                     await updateVariation(store_id, header, body, idproduct, idVariant, idProductHost)
                     .then(async() => {
