@@ -1,6 +1,6 @@
 {
   "name": "hostsync-nuvemshop",
-  "version": "4.0.0",
+  "version": "5.0.0-beta",
   "main": "./src/main/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
