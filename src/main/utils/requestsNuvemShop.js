@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { successHandlingRequests, errorHandlingRequest, saveNewUniqueIdInProduct, gravarLog } = require('./auxFunctions');
 const { parse } = require('dotenv');
+const { preparingPostProduct } = require('./preparingRequests');
 
 
 async function getProductsAndVariants(store_id, header, page){
@@ -106,9 +107,12 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
         .catch(async (error) => {
             if(error.response){
                 if(error.response.data.description=='Product with such id does not exist'){
-                    //! tratar: cadastrar produto
+                    body.attributes = [{"pt": 'Variação'}]
+                    body.published = false;
+                    await registerProduct(store_id, header, body, idHost)
+                }else{
+                    await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
                 }
-                await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
                     await updateProduct(store_id, header, body, idproduct, idHost)
@@ -141,9 +145,10 @@ async function deleteProduct(store_id, header, idproduct, idHost){
         .catch(async (error) => {
             if(error.response){
                 if(error.response.data.description=='Product with such id does not exist'){
-                    //! tratar: considerar sucesso
+                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
+                }else{
+                    await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
                 }
-                await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
                     await deleteProduct(store_id, header, idproduct, idHost)
@@ -281,7 +286,8 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
                     //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
                 }else
                 if(error.response.data.description=='Product with such id does not exist'){
-                    //! tratar: cadastrar produto primeiro
+                    console.log('ERRO ao tentar criar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
+                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
                 }else{
                     await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
                 }
@@ -323,10 +329,11 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
         .catch(async (error) => {
             if(error.response){
                 if(error.response.data.description=='Product with such id does not exist'){
-                    //! tratar: cadastrar produto primeiro e depois variante
+                    console.log('ERRO ao tentar atualizar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
+                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
                 }else
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
-                    //! tratar: cadastrar variante 
+                    await registerVariation(store_id, header, body, idproduct, idProductHost)
                 }else
                 if(error.response.data.description=='The values has the wrong number of elements.'){
                     //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
@@ -368,7 +375,8 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
         .catch(async (error) => {
             if(error.response){
                 if(error.response.data.description=='Product with such id does not exist'){
-                    //! tratar: cadastrar produto e desconsiderar variante
+                    console.log('ERRO ao tentar deletar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
+                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
                 }else
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
                     await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
