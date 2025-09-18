@@ -10,6 +10,9 @@ const { preparingGenerateToken } = require('./utils/preparingRequests.js')
 
 var win;
 
+let watchdogStarted = false;
+let isRestarting = false;
+
 const createWindow = () => {
   win = new BrowserWindow({
     width: 650,
@@ -115,59 +118,93 @@ ipcMain.handle('alignBase', async () => {
 })
 
 
-async function mainProcess(syncFull){
-  return new Promise(async (resolve, reject) => {
-    var config;
+async function mainProcess(syncFull) {
+  try {
+    let config = await returnConfigToAccessDB();
 
-    await returnConfigToAccessDB()
-    .then(async (response) => {
-      config = response;
-      await deleteErrorsRecords()
-      let mensageReturn = await createDependencies(config)
-      if(mensageReturn.code == 500){
-        console.log(mensageReturn)
-        reject(mensageReturn)
-      }else{
-          console.log('1. DEPENDENCIAS CRIADAS COM SUCESSO!')
-          gravarLog('1. DEPENDENCIAS CRIADAS COM SUCESSO!')
-      }
-    })
-    .then(async () => {
-      if(syncFull){
-        let mensageReturn = await limparTabela(config)
-        if(mensageReturn.code == 500){
-          console.log(mensageReturn)
-          reject(mensageReturn)
-        }else{
-          console.log('2. TABELA LIMPA COM SUCESSO!')
-          gravarLog('2. TABELA LIMPA COM SUCESSO!')
-        }
-      }
-    })
-    .then(async () => {
-      if(syncFull){
-        let mensageReturn = await requireAllProducts(config)
-        if(mensageReturn.code == 500){
-          console.log(mensageReturn)
-          reject(mensageReturn)
-        }else{
-          console.log('PRODUTOS SINCRONIZADOS COM SUCESSO')
-          gravarLog('PRODUTOS SINCRONIZADOS COM SUCESSO')
-        }
-      }
-    })
-    .then(async () => {
+    await deleteErrorsRecords();
+
+    let mensageReturn = await createDependencies(config);
+    if (mensageReturn.code == 500) {
+      console.log(mensageReturn);
+      throw mensageReturn;
+    } else {
+      console.log('1. DEPENDENCIAS CRIADAS COM SUCESSO!');
+      gravarLog('1. DEPENDENCIAS CRIADAS COM SUCESSO!');
+    }
+
+    // ---------------- WATCHDOG ----------------
+    if (!watchdogStarted) {
+      watchdogStarted = true;
       setInterval(async () => {
-        await readNewRecords(config)
-        .then(() => {
-          gravarLog('---------------------------------------------------------------------')
-          gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES')
-          gravarLog('---------------------------------------------------------------------')
-        })
-      
-      }, 300000);
-    })
-  })
+        try {
+          const data = new Date();
+          data.setHours(data.getHours() - 3);
+          const dataFormatada = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+          const logFileName = `log_${dataFormatada}.txt`;
+          const logFilePath = path.join(pathLog, logFileName);
+
+          if (fs.existsSync(logFilePath)) {
+            const stats = fs.statSync(logFilePath);
+            const lastModified = stats.mtime;
+            const diffMinutes = (Date.now() - lastModified.getTime()) / 1000 / 60;
+
+            if (diffMinutes > 10 && !isRestarting) {
+              isRestarting = true; // trava para evitar múltiplas execuções
+              gravarLog('WATCHDOG: Nenhuma atividade detectada nos últimos 10 minutos. Reiniciando integrador...');
+              console.log('WATCHDOG: Reiniciando integrador...');
+
+              try {
+                await mainProcess(false); // reinicia sem limpar/sincronizar full
+                gravarLog('WATCHDOG: Reinício concluído com sucesso.');
+              } catch (err) {
+                gravarLog(`WATCHDOG: Erro ao reiniciar - ${err.message}`);
+              } finally {
+                isRestarting = false; // libera para futuros reinícios
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Erro no watchdog:', err);
+          gravarLog(`Erro no watchdog: ${err.message}`);
+        }
+      }, 15 * 60 * 1000);
+    }
+    // -------------------------------------------
+
+    if (syncFull) {
+      mensageReturn = await limparTabela(config);
+      if (mensageReturn.code == 500) {
+        console.log(mensageReturn);
+        throw mensageReturn;
+      } else {
+        console.log('2. TABELA LIMPA COM SUCESSO!');
+        gravarLog('2. TABELA LIMPA COM SUCESSO!');
+      }
+
+      mensageReturn = await requireAllProducts(config);
+      if (mensageReturn.code == 500) {
+        console.log(mensageReturn);
+        throw mensageReturn;
+      } else {
+        console.log('PRODUTOS SINCRONIZADOS COM SUCESSO');
+        gravarLog('PRODUTOS SINCRONIZADOS COM SUCESSO');
+      }
+    }
+
+    // leitura periódica
+    setInterval(async () => {
+      await readNewRecords(config);
+      gravarLog('---------------------------------------------------------------------');
+      gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES');
+      gravarLog('---------------------------------------------------------------------');
+    }, 300000);
+
+  } catch (err) {
+    console.error('Erro no mainProcess:', err);
+    gravarLog(`Erro no mainProcess: ${err.message}`);
+    throw err;
+  }
 }
 
 
