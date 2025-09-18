@@ -339,7 +339,13 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
         .catch(async (error) => {
             if(error.response){
                 if(error.response.data.description=='The values has the wrong number of elements.'){
-                    //!! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                     //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                    
+                    await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
+                    .then(async () => {
+                        console.log('Atualizado produto para poder definir elementos das variacoes')
+                        await registerVariation(store_id, header, body, idproduct, idProductHost)
+                    })
                 }else{
                     await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
                 }
@@ -386,6 +392,7 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
                 }else
                 if(error.response.data.description=='The values has the wrong number of elements.'){
                     //!! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                    //* TAlVEZ NÃO SEJA NECESSÁRIO
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
