@@ -284,6 +284,12 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
             if(error.response){
                 if(error.response.data.description=='The values has the wrong number of elements.'){
                     //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                    
+                    await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
+                    .then(async () => {
+                        console.log('Atualizado produto para poder definir elementos das variacoes')
+                        await registerVariation(store_id, header, body, idproduct, idProductHost)
+                    })
                 }else
                 if(error.response.data.description=='Product with such id does not exist'){
                     console.log('ERRO ao tentar criar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
@@ -337,6 +343,7 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
                 }else
                 if(error.response.data.description=='The values has the wrong number of elements.'){
                     //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
+                    //* TALVEZ NÃO SEJA NECESSARIO
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
