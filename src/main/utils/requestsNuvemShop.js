@@ -392,8 +392,11 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
                     await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO', 0) 
                 }else
                 if(error.response.data.values[0]=='The values has the wrong number of elements.'){
-                    //!! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
-                    //* TAlVEZ NÃO SEJA NECESSÁRIO
+                    await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
+                    .then(async () => {
+                        console.log('Atualizado produto para poder definir elementos das variacoes')
+                        await updateVariation(store_id, header, body, idproduct, idVariant, idProductHost)
+                    })
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
