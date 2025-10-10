@@ -505,7 +505,7 @@ async function uploadImage(store_id, header, body, idProductNuvem, idProductHost
         .catch(async (error) => {
 
             if(error.response){
-                await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, body)
+                await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, 'imagemembase64')
             }else{
                 setTimeout(async () => {
                     await uploadImage(store_id, body, idProductNuvem, idProductHost)
@@ -515,7 +515,7 @@ async function uploadImage(store_id, header, body, idProductNuvem, idProductHost
                     .catch(async () => {
                         console.log('Upload Image Loading...')
 
-                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
+                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', 'imagemembase64')
                         .then(async () => {
                             resolve()
                         })
