@@ -340,8 +340,6 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
             if(error.response){
 
                 if(error.response.data.values[0]=='The values has the wrong number of elements.'){
-                     //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
-                    
                     await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                     .then(async () => {
                         console.log('Atualizado produto para poder definir elementos das variacoes')
