@@ -168,8 +168,9 @@ async function mainProcess(syncFull) {
           console.error('Erro no watchdog:', err);
           gravarLog(`Erro no watchdog: ${err.message}`);
         }
-      }, 15 * 60 * 1000); // 15 minutos
+      }, 15 * 60 * 1000);
     }
+    // -------------------------------------------
 
     if (syncFull) {
       mensageReturn = await limparTabela(config);

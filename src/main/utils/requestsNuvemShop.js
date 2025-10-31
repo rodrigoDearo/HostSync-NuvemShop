@@ -1,7 +1,6 @@
 const axios = require('axios');
 const { successHandlingRequests, errorHandlingRequest, saveNewUniqueIdInProduct, gravarLog } = require('./auxFunctions');
 const { parse } = require('dotenv');
-const { preparingPostProduct } = require('./preparingRequests');
 
 
 async function getProductsAndVariants(store_id, header, page){
@@ -106,13 +105,7 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='Product with such id does not exist'){
-                    body.attributes = [{"pt": 'Variação'}]
-                    body.published = false;
-                    await registerProduct(store_id, header, body, idHost)
-                }else{
-                    await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
-                }
+                await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
                     await updateProduct(store_id, header, body, idproduct, idHost)
@@ -136,22 +129,18 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
 }
 
 
-async function deleteProduct(store_id, header, idproduct, idHost){
+async function deleteProduct(store_id, header, body, idproduct, idHost){
     return new Promise(async (resolve, reject) => {
-        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, header)
+        await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
         .then(async () => {
             await successHandlingRequests('product', 'delete', idHost, idproduct, null)
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='Product with such id does not exist'){
-                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
-                }else{
-                    await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
-                }
+                await errorHandlingRequest('product', 'DELETE', idHost, idproduct, error.response.data, body)
             }else{
                 setTimeout(async () => {
-                    await deleteProduct(store_id, header, idproduct, idHost)
+                    await deleteProduct(store_id, header, body, idproduct, idHost)
                     .then(async() => {
                         resolve()
                     })
@@ -159,6 +148,73 @@ async function deleteProduct(store_id, header, idproduct, idHost){
                         console.log('Delete Product Loading...')
 
                         await errorHandlingRequest('product', 'DELETE', idHost, idproduct, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
+                    })
+                }, 1500); 
+            }
+        })
+        .finally(() => {
+            resolve()
+        })    
+    })
+}
+
+
+async function deleteProductPermanent(store_id, header, idproduct){
+    return new Promise(async (resolve, reject) => {
+        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, header)
+        .then(async () => {
+            gravarLog('DELETADO PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
+        })
+        .catch(async (error) => {
+            console.log(error.response.data)
+            if(error.response){
+                gravarLog('ERRO AO DELETAR PRODUTO QUE NÃO EXISTE NA BASE DO INTEGRADOR')
+            }else{
+                setTimeout(async () => {
+                    await deleteProductPermanent(store_id, header, idproduct)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        console.log('Delete Product Permanent Loading...')
+
+                        await errorHandlingRequest('product', 'DELETEPERMANENT', null, idproduct, 'CONNECTION ERROR', body)
+                        .then(async () => {
+                            resolve()
+                        })
+                    })
+                }, 1500); 
+            }
+        })
+        .finally(() => {
+            resolve()
+        })    
+    })
+}
+
+
+async function undeleteProduct(store_id, header, body, idproduct, idHost){
+    return new Promise(async (resolve, reject) => {
+        await axios.put(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idproduct}`, body, header)
+        .then(async (response) => {
+            await successHandlingRequests('product', 'undelete', idHost, idproduct, null)
+        })
+        .catch(async (error) => {
+            if(error.response){
+                await errorHandlingRequest('product', 'UNDELETE', idHost, idproduct, error.response.data, body)
+            }else{
+                setTimeout(async () => {
+                    await undeleteProduct(store_id, header, body, idproduct, idHost)
+                    .then(async() => {
+                        resolve()
+                    })
+                    .catch(async () => {
+                        console.log('Undelete Product Loading...')
+
+                        await errorHandlingRequest('product', 'UNDELETE', idHost,  'CONNECTION ERROR', body)
                         .then(async () => {
                             resolve()
                         })
@@ -282,21 +338,17 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='The values has the wrong number of elements.'){
-                    //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
-                    
+
+                if(error.response.data.values[0]=='The values has the wrong number of elements.'){
                     await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                     .then(async () => {
                         console.log('Atualizado produto para poder definir elementos das variacoes')
                         await registerVariation(store_id, header, body, idproduct, idProductHost)
                     })
-                }else
-                if(error.response.data.description=='Product with such id does not exist'){
-                    console.log('ERRO ao tentar criar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
-                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
                 }else{
                     await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
                 }
+                
             }else{
                 setTimeout(async () => {
                     await registerVariation(store_id, header, body, idproduct, idProductHost)
@@ -334,21 +386,21 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='Product with such id does not exist'){
-                    console.log('ERRO ao tentar atualizar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
-                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
-                }else
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
-                    await registerVariation(store_id, header, body, idproduct, idProductHost)
+                    await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO', 0) 
                 }else
-                if(error.response.data.description=='The values has the wrong number of elements.'){
-                    //! FAZER TRATAIVA AQUI, POSSIVELMENTE TERA QUE FAZER UM UPDATE NO PRODUTO, DEPOIS TENTAR NOVAMENTE COM A VARIANTE E FINALMENTE DAR UM RESOLVE
-                    //* TALVEZ NÃO SEJA NECESSARIO
+                if(error.response.data.values[0]=='The values has the wrong number of elements.'){
+                    await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
+                    .then(async () => {
+                        console.log('Atualizado produto para poder definir elementos das variacoes')
+                        await updateVariation(store_id, header, body, idproduct, idVariant, idProductHost)
+                    })
                 }else{
                     await errorHandlingRequest('variation', 'PUT', idProductHost, idVariant, error.response.data, body)
                 }
                
-            }else{
+            }
+            else{
                 setTimeout(async () => {
                     await updateVariation(store_id, header, body, idproduct, idVariant, idProductHost)
                     .then(async() => {
@@ -381,10 +433,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='Product with such id does not exist'){
-                    console.log('ERRO ao tentar deletar variacao em produto inexistente na nuvemshop, deletando produto da base do integrador')
-                    await successHandlingRequests('product', 'delete', idHost, idproduct, null)
-                }else
+
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
                     await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
                 }else
@@ -454,7 +503,7 @@ async function uploadImage(store_id, header, body, idProductNuvem, idProductHost
         .catch(async (error) => {
 
             if(error.response){
-                await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, body)
+                await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, 'imagemembase64')
             }else{
                 setTimeout(async () => {
                     await uploadImage(store_id, body, idProductNuvem, idProductHost)
@@ -464,7 +513,7 @@ async function uploadImage(store_id, header, body, idProductNuvem, idProductHost
                     .catch(async () => {
                         console.log('Upload Image Loading...')
 
-                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', body)
+                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', 'imagemembase64')
                         .then(async () => {
                             resolve()
                         })
@@ -558,6 +607,8 @@ module.exports = {
     registerProduct,
     updateProduct,
     deleteProduct,
+    deleteProductPermanent,
+    undeleteProduct,
     registerCategory,
     //deleteCategory,
     registerVariation,

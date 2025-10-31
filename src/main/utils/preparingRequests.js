@@ -1,4 +1,4 @@
-const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImage, deleteImage, generateToken } = require('./requestsNuvemShop');
+const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, deleteProductPermanent, undeleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImage, deleteImage, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
   
@@ -27,7 +27,6 @@ const { returnInfo } = require('../envManager');
   async function preparingPostProduct(product) {
     const infosNuvem = await getHeaderAndStore();
     const idHost = product.codigo;
-    product.published = false;
     delete product.codigo;
     await registerProduct(infosNuvem[0], infosNuvem[1], product, idHost);
   }
@@ -37,13 +36,28 @@ const { returnInfo } = require('../envManager');
     const idHost = product.codigo;
     delete product.codigo;
     delete product.attributes;
-    delete product.published
     await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
   }
-
-  async function preparingDeleteProduct(idproduct, idHost) {
+  
+  async function preparingDeleteProduct(idHost, idproduct, product) {
     const infosNuvem = await getHeaderAndStore();
-    await deleteProduct(infosNuvem[0], infosNuvem[1], idproduct, idHost);
+    delete product.codigo;
+    delete product.attributes;
+    product.published = false;
+    await deleteProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+  }
+
+  async function preparingDeletePermanentProduct(idproduct) {
+    const infosNuvem = await getHeaderAndStore();
+    await deleteProductPermanent(infosNuvem[0], infosNuvem[1], idproduct);
+  }
+  
+  async function preparingUndeleteProduct(idHost, idproduct, product) {
+    const infosNuvem = await getHeaderAndStore();
+    delete product.codigo;
+    delete product.attributes;
+    product.published = true;
+    await undeleteProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
   }
   
   async function preparingPostCategory(category) {
@@ -121,6 +135,8 @@ const { returnInfo } = require('../envManager');
     preparingPostProduct,
     preparingUpdateProduct,
     preparingDeleteProduct,
+    preparingDeletePermanentProduct,
+    preparingUndeleteProduct,
     preparingPostCategory,
     preparingPostSubCategory,
     preparingPostVariation,

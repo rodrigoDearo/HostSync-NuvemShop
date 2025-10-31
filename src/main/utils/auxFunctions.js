@@ -75,6 +75,7 @@ async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, o
           productsDB[`${idHost}`] = {
             "idNuvemShop": `${idNuvemShop}`,
             "UniqueId": `${othersInfo}`,
+            "status": "ATIVO",
             "imageId": "",
             "hashImage": "",
             "variations": {}
@@ -88,10 +89,14 @@ async function successHandlingRequests(destiny, resource, idHost, idNuvemShop, o
           break;
 
         case "delete":
-          delete productsDB[`${idHost}`]
+          productsDB[`${idHost}`].status = "INATIVO";
           gravarLog('Deletado registro no banco de ' + destiny);
           break;
 
+        case "undelete":
+          productsDB[`${idHost}`].status = "ATIVO";
+          gravarLog('Re-Cadastrado registro no banco de ' + destiny);
+          break;
       }
 
       fs.writeFileSync(pathProducts, JSON.stringify(productsDB), 'utf-8')
