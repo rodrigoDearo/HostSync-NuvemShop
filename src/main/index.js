@@ -198,7 +198,7 @@ async function mainProcess(syncFull) {
       gravarLog('---------------------------------------------------------------------');
       gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES');
       gravarLog('---------------------------------------------------------------------');
-    }, 300000);
+    }, 30000);
 
   } catch (err) {
     console.error('Erro no mainProcess:', err);
