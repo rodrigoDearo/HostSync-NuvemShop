@@ -69,7 +69,7 @@ async function putVariantsInProduct(store_id, header, body, idproduct, idProduct
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='Product_Image with such id does not exist'){
+                if(error.response.data.description=='Product with such id does not exist'){
                     await successHandlingRequests('product', 'delete', idProductHost, idproduct, null)
                 }else{
                     await errorHandlingRequest('product', 'PUT', idProductHost, idproduct, error.response.data, body)
@@ -109,7 +109,7 @@ async function updateProduct(store_id, header, body, idproduct, idHost){
         })
         .catch(async (error) => {
             if(error.response){
-                if(error.response.data.description=='Product_Image with such id does not exist'){
+                if(error.response.data.description=='Product with such id does not exist'){
                     await successHandlingRequests('product', 'delete', idHost, idproduct, null)
                 }else{
                     await errorHandlingRequest('product', 'PUT', idHost, idproduct, error.response.data, body)
@@ -284,7 +284,7 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
         .catch(async (error) => {
             if(error.response){
 
-                if(error.response.data.description.values){
+                if(error.response.data.values){
                     if(error.response.data.values[0]=='The values has the wrong number of elements.'){
                         await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
                         .then(async () => {
@@ -295,7 +295,7 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
                         await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
                     }
                 }else{
-                    if(error.response.data.description=='Product_Image with such id does not exist'){
+                    if(error.response.data.description=='Product with such id does not exist'){
                         await successHandlingRequests('product', 'delete', idProductHost, idproduct, null)
                     }else{
                         await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
@@ -342,7 +342,7 @@ async function updateVariation(store_id, header, body, idproduct, idVariant, idP
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
                     await deleteVariation(store_id, header, idproduct, idVariant, idProductHost, 'PRODUTO DESCONHECIDO', 0) 
                 }else
-                if(error.response.data.description=='Product_Image with such id does not exist'){
+                if(error.response.data.description=='Product with such id does not exist'){
                     await successHandlingRequests('product', 'delete', idProductHost, idproduct, null)
                 }else
                 if(error.response.data.values[0]=='The values has the wrong number of elements.'){
@@ -393,7 +393,7 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
                 if(error.response.data.description=='Product_Variant with such id does not exist'){
                     await successHandlingRequests('variation', 'delete', idProductHost, idVariant, [nameVariant])
                 }else
-                if(error.response.data.description=='Product_Image with such id does not exist'){
+                if(error.response.data.description=='Product with such id does not exist'){
                     await successHandlingRequests('product', 'delete', idProductHost, idproduct, null)
                 }else
                 if(error.response.data.description=="The last variant of a product cannot be deleted."){
@@ -453,80 +453,6 @@ async function deleteVariation(store_id, header, idproduct, idVariant, idProduct
     })
 }
 
-async function uploadImage(store_id, header, body, idProductNuvem, idProductHost, hash){
-    return new Promise(async (resolve, reject) => {
-        await axios.post(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProductNuvem}/images`, body, header)
-        .then(async (answer) => {
-            await successHandlingRequests('image', 'post', idProductHost, answer.data.id, [hash])
-        })
-        .catch(async (error) => {
-
-            if(error.response){
-                if(error.response.data.description=='Product_Image with such id does not exist'){
-                    await successHandlingRequests('product', 'delete', idProductHost, idProductNuvem, null)
-                }else{
-                    await errorHandlingRequest('image', 'POST', idProductHost, null, error.response.data, 'imagemembase64')
-                }
-            }else{
-                setTimeout(async () => {
-                    await uploadImage(store_id, body, idProductNuvem, idProductHost)
-                    .then(async() => {
-                        resolve()
-                    })
-                    .catch(async () => {
-                        console.log('Upload Image Loading...')
-
-                        await errorHandlingRequest('image', 'POST', idProductHost, null, 'CONNECTION ERROR', 'imagemembase64')
-                        .then(async () => {
-                            resolve()
-                        })
-                    })
-                }, 1500); 
-            }
-        })
-        .finally(() => {
-            resolve()
-        })    
-    })
-}
-
-
-async function deleteImage(store_id, header, idProductNuvem, idImage, idProductHost){
-    return new Promise(async (resolve, reject) => {
-        await axios.delete(`https://api.nuvemshop.com.br/v1/${store_id}/products/${idProductNuvem}/images/${idImage}`, header)
-        .then(async (answer) => {
-            await successHandlingRequests('image', 'delete', idProductHost, null, null)
-        })
-        .catch(async (error) => {
-            if(error.response){
-                if(error.response.data.description=='Product_Image with such id does not exist'){
-                    await successHandlingRequests('product', 'delete', idProductHost, idProductNuvem, null)
-                }else{
-                    await errorHandlingRequest('image', 'DELETE', idProductHost, null, error.response.data, null)
-                }
-            }else{
-                setTimeout(async () => {
-                    await deleteImage(store_id, header, idProductNuvem, idImage, idProductHost)
-                    .then(async() => {
-                        resolve()
-                    })
-                    .catch(async () => {
-                        console.log('Delete Image Loading...')
-
-                        await errorHandlingRequest('image', 'DELETE', idProductHost, null, 'CONNECTION ERROR', null)
-                        .then(async () => {
-                            resolve()
-                        })
-                    })
-                }, 1500); 
-            }
-        })
-        .finally(() => {
-            resolve()
-        })    
-    })
-}
-
 
 // ---------------------------------------------------------------------
 
@@ -575,7 +501,5 @@ module.exports = {
     registerVariation,
     updateVariation,
     deleteVariation,
-    uploadImage,
-    deleteImage,
     generateToken
 }

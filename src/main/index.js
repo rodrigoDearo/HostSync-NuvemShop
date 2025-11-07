@@ -10,8 +10,6 @@ const { preparingGenerateToken } = require('./utils/preparingRequests.js')
 
 var win;
 
-let watchdogStarted = false;
-let isRestarting = false;
 
 const createWindow = () => {
   win = new BrowserWindow({
@@ -132,45 +130,6 @@ async function mainProcess(syncFull) {
       console.log('1. DEPENDENCIAS CRIADAS COM SUCESSO!');
       gravarLog('1. DEPENDENCIAS CRIADAS COM SUCESSO!');
     }
-
-    // ---------------- WATCHDOG ----------------
-    if (!watchdogStarted) {
-      watchdogStarted = true;
-      setInterval(async () => {
-        try {
-          const data = new Date();
-          data.setHours(data.getHours() - 3);
-          const dataFormatada = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
-          const logFileName = `log_${dataFormatada}.txt`;
-          const logFilePath = path.join(pathLog, logFileName);
-
-          if (fs.existsSync(logFilePath)) {
-            const stats = fs.statSync(logFilePath);
-            const lastModified = stats.mtime;
-            const diffMinutes = (Date.now() - lastModified.getTime()) / 1000 / 60;
-
-            if (diffMinutes > 10 && !isRestarting) {
-              isRestarting = true; // trava para evitar múltiplas execuções
-              gravarLog('WATCHDOG: Nenhuma atividade detectada nos últimos 10 minutos. Reiniciando integrador...');
-              console.log('WATCHDOG: Reiniciando integrador...');
-
-              try {
-                await mainProcess(false); // reinicia sem limpar/sincronizar full
-                gravarLog('WATCHDOG: Reinício concluído com sucesso.');
-              } catch (err) {
-                gravarLog(`WATCHDOG: Erro ao reiniciar - ${err.message}`);
-              } finally {
-                isRestarting = false; // libera para futuros reinícios
-              }
-            }
-          }
-        } catch (err) {
-          console.error('Erro no watchdog:', err);
-          gravarLog(`Erro no watchdog: ${err.message}`);
-        }
-      }, 15 * 60 * 1000);
-    }
-    // -------------------------------------------
 
     if (syncFull) {
       mensageReturn = await limparTabela(config);

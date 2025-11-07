@@ -1,4 +1,6 @@
-const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, uploadImage, deleteImage, generateToken } = require('./requestsNuvemShop');
+const axios = require('axios');
+
+const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
   
@@ -37,7 +39,24 @@ const { returnInfo } = require('../envManager');
     const idHost = product.codigo;
     delete product.codigo;
     delete product.attributes;
-    delete product.published;
+
+    try {
+      const imagesResponse = await axios.get(
+        `https://api.nuvemshop.com.br/v1/${infosNuvem[0]}/products/${idproduct}/images`,
+        infosNuvem[1]
+      );
+
+      if (Array.isArray(imagesResponse.data) && imagesResponse.data.length > 0) {
+        product.published = true;
+      } else {
+        product.published = false;
+      }
+
+    } catch (error) {
+      console.error(`? Erro ao verificar imagens do produto ${idproduct}:`, error.message);
+      product.published = false; 
+    }
+
     await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
   }
   
@@ -87,22 +106,7 @@ const { returnInfo } = require('../envManager');
   }
   */
 
-  async function preparingUploadImage(image, idProductNuvem, idProductHost, hash) {
-    const infosNuvem = await getHeaderAndStore();
-    const body = {
-      "filename": "image",
-      "position": 1,
-      "attachment": image
-    };
-    if(image){
-      await uploadImage(infosNuvem[0], infosNuvem[1], body, idProductNuvem, idProductHost, hash);
-    }
-  }
 
-  async function preparingDeleteImage(idProductNuvem, idImageNuvem, idProductHost) {
-    const infosNuvem = await getHeaderAndStore();
-    await deleteImage(infosNuvem[0], infosNuvem[1], idProductNuvem, idImageNuvem, idProductHost);
-  }
 
   async function preparingGenerateToken(code) {
     const client_secret = await returnInfo('client_secret');
@@ -126,8 +130,6 @@ const { returnInfo } = require('../envManager');
     preparingPostVariation,
     preparingUpdateVariation,
     preparingDeleteVariation,
-    preparingUploadImage,
-    preparingDeleteImage,
     preparingGenerateToken,
   };
   

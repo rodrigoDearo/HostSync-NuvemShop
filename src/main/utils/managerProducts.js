@@ -6,7 +6,6 @@ const { app } = require('electron')
 const { preparingGetProductsAndVariants, preparingPostProduct , preparingUpdateProduct, preparingDeleteProduct, preparingUpdateVariation } = require('./preparingRequests.js');
 const { returnCategoryId } = require('./managerCategories.js');
 const { requireAllVariationsOfAProduct } = require('./managerVariations.js')
-const { registerOrUpdateImage } = require('./managerImages.js')
 const { findProductKeyByIdNuvemShopAsync, gravarLog } = require('./auxFunctions.js');
 const { setTimeout } = require('timers');
 
@@ -146,7 +145,6 @@ async function readingAllRecordProducts(productsRecords, index){
             let product = {
                     "codigo": record.ID_PRODUTO,
                     "name": record.PRODUTO,
-                    "description": record.DESCRICAO_COMPLEMENTAR,
                     "attributes":[
                         {
                             "pt": 'Variação'
@@ -179,9 +177,6 @@ async function readingAllRecordProducts(productsRecords, index){
                 console.log(`4. PRODUTO ${product.name} ESTRUTURADO COM SUCESSO!`)
 
                 await registerOrUpdateProduct(product)
-                .then(async () => {
-                    await registerOrUpdateImage(record.FOTO, record.ID_PRODUTO)
-                })
             })
             .then(async() => {
                 setTimeout(() => {
