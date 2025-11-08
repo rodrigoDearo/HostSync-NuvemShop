@@ -149,15 +149,17 @@ async function mainProcess(syncFull) {
         console.log('PRODUTOS SINCRONIZADOS COM SUCESSO');
         gravarLog('PRODUTOS SINCRONIZADOS COM SUCESSO');
       }
+
     }
 
-    // leitura periódica
-    setInterval(async () => {
+    let timeInterval = 1000*60*5;
+
+     setInterval(async () => {
       await readNewRecords(config);
       gravarLog('---------------------------------------------------------------------');
       gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES');
       gravarLog('---------------------------------------------------------------------');
-    }, 30000);
+    }, timeInterval);
 
   } catch (err) {
     console.error('Erro no mainProcess:', err);

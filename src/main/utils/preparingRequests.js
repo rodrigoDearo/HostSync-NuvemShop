@@ -52,12 +52,14 @@ const { returnInfo } = require('../envManager');
         product.published = false;
       }
 
+       await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+
     } catch (error) {
       console.error(`? Erro ao verificar imagens do produto ${idproduct}:`, error.message);
       product.published = false; 
+      await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
     }
-
-    await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+   
   }
   
   async function preparingDeleteProduct(idHost, idproduct){
