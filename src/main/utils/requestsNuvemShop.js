@@ -297,7 +297,27 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
                 }else{
                     if(error.response.data.description=='Product with such id does not exist'){
                         await successHandlingRequests('product', 'delete', idProductHost, idproduct, null)
-                    }else{
+                    }else
+                    if (error.response.data.description == 'Variants cannot be repeated') {
+                        const variants = await getVariants(store_id, header, idproduct, idProductHost);
+                        console.log('Consultado variações do produto para poder salvar ID no banco')
+                        gravarLog('Consultado variações do produto para poder salvar ID no banco')
+
+                        const found = variants.find(v => 
+                            v.values?.[0]?.pt?.trim().toLowerCase() === body.values?.[0]?.pt?.trim().toLowerCase()
+                        );
+
+                        if (found) {
+                            console.log(`Variação duplicada encontrada`);
+                            gravarLog(`Variação duplicada encontrada`);
+                            await successHandlingRequests('variation', 'post', idProductHost, found.id, [found.values[0].pt]);
+                        } else {
+                            console.log('Nenhuma variação correspondente encontrada, registrando erro...');
+                            gravarLog('Nenhuma variação correspondente encontrada, registrando erro...');
+                            await errorHandlingRequest('variation', 'POST', idProductHost, null, 'VARIATION_DUPLICATED_NOT_FOUND', body);
+                        }
+                    }
+                    else{
                         await errorHandlingRequest('variation', 'POST', idProductHost, null, error.response.data, body)
                     }
                 }
