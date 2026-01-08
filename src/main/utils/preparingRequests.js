@@ -55,9 +55,8 @@ const { returnInfo } = require('../envManager');
        await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
 
     } catch (error) {
-      console.error(`? Erro ao verificar imagens do produto ${idproduct}:`, error.message);
-      product.published = false; 
-      await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+      console.log(`? Erro ao verificar imagens do produto ${idproduct}:`, error.message);
+      return
     }
    
   }
