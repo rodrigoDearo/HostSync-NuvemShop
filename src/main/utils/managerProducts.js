@@ -243,8 +243,13 @@ async function registerOrUpdateProduct(product){
                 console.log('-variantes consultadas')
                 gravarLog('-variantes consultadas')
                 let productsDBAtualizado = JSON.parse(fs.readFileSync(pathProducts))
-
-                if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
+                
+                if(productsDBAtualizado[`${idProductHost}`]==undefined){
+                    setTimeout(() => {
+                        resolve();
+                    }, 1000);
+                }
+                else if(Object.keys(productsDBAtualizado[`${idProductHost}`].variations).length === 0){
                     await preparingUpdateVariation(justProduct, UniqueIdProductOnNuvem, IdProducAndVariants, idProductHost)
                     .then(() => {
                          setTimeout(() => {
