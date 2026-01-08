@@ -3,6 +3,7 @@ const axios = require('axios');
 const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
+const { gravarLog } = require('./auxFunctions');
   
   async function getHeaderAndStore() {
     const cli_id = await returnInfo('client_id');
@@ -55,7 +56,14 @@ const { returnInfo } = require('../envManager');
        await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
 
     } catch (error) {
-      console.log(`? Erro ao verificar imagens do produto ${idproduct}:`, error.message);
+      if(error.description=="Product with such id does not exist"){
+        console.log(`Produto ${idproduct} nao existe na base da NuvemShop, sera deletado`)
+        await preparingDeleteProduct(idHost, idproduct);
+      }else{
+        console.log(`? Erro ao verificar imagens do produto ${idproduct}:`, error.description);
+        gravarLog(`? Erro ao verificar imagens do produto ${idproduct}:`, error.description)
+      }
+      
       return
     }
    
