@@ -3,7 +3,7 @@ const axios = require('axios');
 const { getProductsAndVariants, registerProduct, updateProduct, deleteProduct, registerCategory, deleteCategory, getVariants, registerVariation, updateVariation, deleteVariation, generateToken } = require('./requestsNuvemShop');
 const { returnValueFromJson } = require('./manageInfoUser');
 const { returnInfo } = require('../envManager');
-const { gravarLog } = require('./auxFunctions');
+const { gravarLog, successHandlingRequests } = require('./auxFunctions');
   
   async function getHeaderAndStore() {
     const cli_id = await returnInfo('client_id');
@@ -42,10 +42,7 @@ const { gravarLog } = require('./auxFunctions');
     delete product.attributes;
 
     try {
-      const imagesResponse = await axios.get(
-        `https://api.nuvemshop.com.br/v1/${infosNuvem[0]}/products/${idproduct}/images`,
-        infosNuvem[1]
-      );
+      const imagesResponse = await axios.get(`https://api.nuvemshop.com.br/v1/${infosNuvem[0]}/products/${idproduct}/images`, infosNuvem[1]);
 
       if (Array.isArray(imagesResponse.data) && imagesResponse.data.length > 0) {
         product.published = true;
@@ -53,18 +50,26 @@ const { gravarLog } = require('./auxFunctions');
         product.published = false;
       }
 
-       await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
+      await updateProduct(infosNuvem[0], infosNuvem[1], product, idproduct, idHost);
 
     } catch (error) {
-      if(error.description=="Product with such id does not exist"){
-        console.log(`Produto ${idproduct} nao existe na base da NuvemShop, sera deletado`)
-        await preparingDeleteProduct(idHost, idproduct);
-      }else{
-        console.log(`? Erro ao verificar imagens do produto ${idproduct}:`, error.description);
-        gravarLog(`? Erro ao verificar imagens do produto ${idproduct}:`, error.description)
+      if (!error.response) {
+        console.log(`Erro de rede ao verificar imagens do produto ${idproduct}`, error.code || error.message);
+        gravarLog(`Erro de rede ao verificar imagens do produto ${idproduct}: ${error.code || error.message}`);
+        return
       }
-      
-      return
+      else if (error.response.data?.description === 'Product with such id does not exist'){
+        console.log(`Produto ${idproduct} nao existe na NuvemShop, removendo vinculo local`);
+        await successHandlingRequests('product', 'delete', idHost, idproduct, null)
+        .then(() => {
+          return
+        })
+      }
+      else {
+        console.log(`Erro ao verificar imagens do produto ${idproduct}`, error.response?.data || error.message);
+        gravarLog(`Erro ao verificar imagens do produto ${idproduct}: ${JSON.stringify(error.response?.data) || error.message}`);
+        return
+      }
     }
    
   }
