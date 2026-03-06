@@ -78,8 +78,10 @@ async function requireAllRecordsProductNotifyTable(config){
   
             db.query(codigoSQL, async function (err, result){
                 if (err)
-                    reject({code: 500, msg:'ERRO AO CONSULTAR TABELA NOTIFICACOES, CONTATAR SUPORTE TECNICO'});
+                    console.log(err)
+                    //reject({code: 500, msg:'ERRO AO CONSULTAR TABELA NOTIFICACOES, CONTATAR SUPORTE TECNICO'});
                 
+                    console.log(result)
                 resolve(result)
             });
           

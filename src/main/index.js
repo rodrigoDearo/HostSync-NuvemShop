@@ -154,11 +154,14 @@ async function mainProcess(syncFull) {
 
     let timeInterval = 1000*60*5;
 
-     setInterval(async () => {
+    await readNewRecords(config);
+
+    setInterval(async () => {
       await readNewRecords(config);
       gravarLog('---------------------------------------------------------------------');
       gravarLog('REALIZADO A LEITURA PERIODICA DA TABELA DE NOTIFICACOES');
       gravarLog('---------------------------------------------------------------------');
+      console.log('TO AQUI')
     }, timeInterval);
 
   } catch (err) {
