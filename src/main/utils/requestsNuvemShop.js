@@ -340,7 +340,7 @@ async function registerVariation(store_id, header, body, idproduct, idProductHos
             if(error.response){
 
                 if(error.response.data.values = undefined){
-                    console.log(error.response.data)
+                    console.log(error.response)
                 }else
                 if(error.response.data.values[0]=='The values has the wrong number of elements.'){
                     await updateProduct(store_id, header, {"attributes":[{"pt": 'Variação'}]}, idproduct, idProductHost)
